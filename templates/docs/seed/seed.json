@@ -1,0 +1,188 @@
+{
+	"$schema": "https://emdashcms.com/seed.schema.json",
+	"version": "1",
+	"meta": {
+		"name": "Docs",
+		"description": "Docusaurus-style documentation beside pages and posts",
+		"author": "EmDash"
+	},
+	"settings": {
+		"title": "Docs",
+		"tagline": "Documentation built with EmDash"
+	},
+	"collections": [
+		{
+			"slug": "pages",
+			"label": "Pages",
+			"labelSingular": "Page",
+			"urlPattern": "/{slug}",
+			"supports": ["drafts", "revisions", "search"],
+			"fields": [
+				{ "slug": "title", "label": "Title", "type": "string", "required": true, "searchable": true },
+				{ "slug": "content", "label": "Content", "type": "portableText", "searchable": true }
+			]
+		},
+		{
+			"slug": "posts",
+			"label": "Posts",
+			"labelSingular": "Post",
+			"urlPattern": "/posts/{slug}",
+			"supports": ["drafts", "revisions", "search", "seo"],
+			"fields": [
+				{ "slug": "title", "label": "Title", "type": "string", "required": true, "searchable": true },
+				{ "slug": "content", "label": "Content", "type": "portableText", "searchable": true }
+			]
+		},
+		{
+			"slug": "docs",
+			"label": "Docs",
+			"labelSingular": "Doc",
+			"urlPattern": "/docs/{path}",
+			"supports": ["drafts", "revisions", "search", "seo", "hierarchical", "versioned"],
+			"fields": [
+				{ "slug": "title", "label": "Title", "type": "string", "required": true, "searchable": true },
+				{ "slug": "content", "label": "Content", "type": "portableText", "searchable": true }
+			]
+		}
+	],
+	"contentVersions": [
+		{ "collection": "docs", "slug": "current", "label": "Next", "isDefault": true }
+	],
+	"menus": [
+		{
+			"name": "primary",
+			"label": "Primary Navigation",
+			"items": [
+				{ "type": "custom", "label": "Home", "url": "/" },
+				{ "type": "custom", "label": "Docs", "url": "/docs" }
+			]
+		}
+	],
+	"content": {
+		"pages": [
+			{
+				"id": "home-note",
+				"slug": "about",
+				"status": "published",
+				"data": {
+					"title": "About",
+					"content": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "a0",
+							"children": [
+								{
+									"_type": "span",
+									"_key": "a1",
+									"text": "This site has pages, posts, and a hierarchical docs tree."
+								}
+							]
+						}
+					]
+				}
+			}
+		],
+		"docs": [
+			{
+				"id": "guides",
+				"slug": "guides",
+				"kind": "section",
+				"sortOrder": 0,
+				"status": "published",
+				"data": {
+					"title": "Guides",
+					"content": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "g0",
+							"children": [
+								{ "_type": "span", "_key": "g1", "text": "How-to guides for getting started." }
+							]
+						}
+					]
+				}
+			},
+			{
+				"id": "install",
+				"slug": "install",
+				"parent": "guides",
+				"sortOrder": 0,
+				"status": "published",
+				"data": {
+					"title": "Install",
+					"content": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "i0",
+							"children": [
+								{ "_type": "span", "_key": "i1", "text": "Install EmDash and create a docs collection with Hierarchical enabled." }
+							]
+						}
+					]
+				}
+			},
+			{
+				"id": "config",
+				"slug": "config",
+				"parent": "guides",
+				"sortOrder": 1,
+				"status": "published",
+				"data": {
+					"title": "Configure",
+					"content": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "c0",
+							"children": [
+								{ "_type": "span", "_key": "c1", "text": "Set the collection URL pattern to /docs/{path}." }
+							]
+						}
+					]
+				}
+			},
+			{
+				"id": "reference",
+				"slug": "reference",
+				"kind": "section",
+				"sortOrder": 1,
+				"status": "published",
+				"data": {
+					"title": "Reference",
+					"content": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "r0",
+							"children": [
+								{ "_type": "span", "_key": "r1", "text": "API and concept reference." }
+							]
+						}
+					]
+				}
+			},
+			{
+				"id": "cli",
+				"slug": "cli",
+				"parent": "reference",
+				"status": "published",
+				"data": {
+					"title": "CLI",
+					"content": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "l0",
+							"children": [
+								{ "_type": "span", "_key": "l1", "text": "Command-line tools for seeding and migrating docs." }
+							]
+						}
+					]
+				}
+			}
+		]
+	}
+}

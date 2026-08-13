@@ -1,0 +1,129 @@
+---
+interface Props {
+	/** CSS selector of the article body to scan for h2/h3. */
+	contentSelector?: string;
+}
+
+const { contentSelector = ".docs-prose" } = Astro.props;
+---
+
+<nav class="docs-toc" aria-label="On this page" data-docs-toc data-content={contentSelector}>
+	<h4 class="docs-toc-title">On this page</h4>
+	<div class="docs-toc-body"></div>
+</nav>
+
+<script>
+	function slugify(text: string): string {
+		return text
+			.toLowerCase()
+			.trim()
+			.replace(/[^\w\s-]/g, "")
+			.replace(/\s+/g, "-")
+			.slice(0, 64);
+	}
+
+	function buildToc() {
+		document.querySelectorAll<HTMLElement>("[data-docs-toc]").forEach((toc) => {
+			const selector = toc.dataset.content || ".docs-prose";
+			const content = document.querySelector(selector);
+			const body = toc.querySelector(".docs-toc-body");
+			if (!content || !body) return;
+			body.replaceChildren();
+
+			const headings = content.querySelectorAll("h2, h3");
+			if (headings.length === 0) {
+				toc.hidden = true;
+				return;
+			}
+			toc.hidden = false;
+
+			const list = document.createElement("ul");
+			list.className = "docs-toc-list";
+			const used = new Set<string>();
+
+			headings.forEach((heading, index) => {
+				if (!heading.id) {
+					let id = slugify(heading.textContent || `heading-${index}`) || `heading-${index}`;
+					let n = 2;
+					while (used.has(id) || document.getElementById(id)) {
+						id = `${id}-${n}`;
+						n += 1;
+					}
+					heading.id = id;
+				}
+				used.add(heading.id);
+
+				const li = document.createElement("li");
+				li.className = heading.tagName === "H3" ? "docs-toc-item is-nested" : "docs-toc-item";
+				const link = document.createElement("a");
+				link.href = `#${heading.id}`;
+				link.className = "docs-toc-link";
+				link.textContent = heading.textContent;
+				li.appendChild(link);
+				list.appendChild(li);
+			});
+			body.appendChild(list);
+
+			const observer = new IntersectionObserver(
+				(entries) => {
+					entries.forEach((entry) => {
+						if (!entry.isIntersecting) return;
+						const id = entry.target.id;
+						const link = body.querySelector(`a[href="#${id}"]`);
+						if (!link) return;
+						body.querySelectorAll(".docs-toc-link").forEach((item) => item.classList.remove("is-active"));
+						link.classList.add("is-active");
+					});
+				},
+				{ rootMargin: "-80px 0px -70% 0px" },
+			);
+			headings.forEach((heading) => observer.observe(heading));
+		});
+	}
+
+	buildToc();
+	document.addEventListener("astro:page-load", buildToc);
+</script>
+
+<style>
+	.docs-toc-title {
+		font-size: var(--font-size-xs);
+		font-weight: 600;
+		letter-spacing: var(--tracking-wide);
+		text-transform: uppercase;
+		color: var(--color-muted);
+		margin-bottom: var(--spacing-3);
+	}
+
+	.docs-toc :global(.docs-toc-list) {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		border-inline-start: 1px solid var(--color-border-subtle);
+	}
+
+	.docs-toc :global(.docs-toc-item) {
+		margin: 0;
+	}
+
+	.docs-toc :global(.docs-toc-item.is-nested) .docs-toc-link {
+		padding-inline-start: 1.25rem;
+	}
+
+	.docs-toc :global(.docs-toc-link) {
+		display: block;
+		padding: 0.28rem 0.75rem;
+		font-size: var(--font-size-sm);
+		color: var(--color-muted);
+		text-decoration: none;
+		line-height: var(--leading-snug);
+		border-inline-start: 2px solid transparent;
+		margin-inline-start: -1px;
+	}
+
+	.docs-toc :global(.docs-toc-link:hover),
+	.docs-toc :global(.docs-toc-link.is-active) {
+		color: var(--color-text);
+		border-inline-start-color: var(--color-accent);
+	}
+</style>

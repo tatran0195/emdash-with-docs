@@ -1,0 +1,251 @@
+---
+import { getEmDashTree, getEmDashVersions } from "emdash";
+import Base from "../../layouts/Base.astro";
+import DocsSearch from "../../components/docs/DocsSearch.astro";
+import { countTreeNodes, docsHref, flattenTree } from "../../utils/docs";
+
+const [{ versions }, { tree }] = await Promise.all([
+	getEmDashVersions("docs"),
+	getEmDashTree("docs"),
+]);
+
+const defaultVersion = versions.find((version) => version.isDefault)?.slug ?? "current";
+const prefix = "/docs";
+const stats = countTreeNodes(tree);
+const roots = tree;
+---
+
+<Base
+	title="Documentation"
+	description="Hierarchical, versioned docs beside pages and posts — running on Bun + SQLite."
+>
+	<div class="docs-home">
+		<header class="docs-hero">
+			<p class="docs-kicker">EmDash · Bun demo</p>
+			<h1>Documentation</h1>
+			<p class="docs-lede">
+				A Docusaurus-style docs collection next to pages and posts. Folders are pages, the
+				sidebar is ordered, versions are first-class, and breadcrumbs come from the tree.
+			</p>
+			<div class="docs-search-wrap">
+				<DocsSearch autofocus />
+			</div>
+			<dl class="docs-stats">
+				<div>
+					<dt>Sections</dt>
+					<dd>{stats.sections}</dd>
+				</div>
+				<div>
+					<dt>Pages</dt>
+					<dd>{stats.docs}</dd>
+				</div>
+				<div>
+					<dt>Versions</dt>
+					<dd>{versions.length}</dd>
+				</div>
+			</dl>
+		</header>
+
+		<section class="docs-index">
+			<h2>Browse</h2>
+			<div class="docs-cards">
+				{
+					roots.map((node) => (
+						<a class="docs-card" href={docsHref(prefix, node.path)}>
+							<p class="docs-card-kind">{node.kind === "section" ? "Folder" : "Page"}</p>
+							<h3>{node.title}</h3>
+							{node.children.length > 0 && (
+								<ul>
+									{node.children.slice(0, 4).map((child) => (
+										<li>{child.title}</li>
+									))}
+								</ul>
+							)}
+						</a>
+					))
+				}
+			</div>
+		</section>
+
+		{
+			versions.length > 1 && (
+				<section class="docs-version-list">
+					<h2>Versions</h2>
+					<ul>
+						{versions.map((version) => {
+							const href = version.slug === defaultVersion ? "/docs" : `/docs/${version.slug}`;
+							return (
+								<li>
+									<a href={href}>
+										<strong>{version.label}</strong>
+										<span>
+											{version.isDefault ? "latest" : version.slug}
+											{version.isFrozen ? " · frozen snapshot" : ""}
+										</span>
+									</a>
+								</li>
+							);
+						})}
+					</ul>
+				</section>
+			)
+		}
+
+		<section class="docs-all">
+			<h2>All pages</h2>
+			<ol>
+				{
+					flattenTree(tree).map((node) => (
+						<li>
+							<a href={docsHref(prefix, node.path)}>
+								<code>{node.path}</code>
+								<span>{node.title}</span>
+							</a>
+						</li>
+					))
+				}
+			</ol>
+		</section>
+	</div>
+</Base>
+
+<style>
+	.docs-home {
+		max-width: var(--wide-width);
+		margin: 0 auto;
+		padding: var(--spacing-12) var(--spacing-6) var(--spacing-16);
+	}
+
+	.docs-hero {
+		max-width: 720px;
+		margin-bottom: var(--spacing-12);
+	}
+
+	.docs-kicker {
+		font-size: var(--font-size-xs);
+		font-weight: 600;
+		letter-spacing: var(--tracking-wider);
+		text-transform: uppercase;
+		color: var(--color-accent);
+		margin-bottom: var(--spacing-3);
+	}
+
+	.docs-hero h1 {
+		font-size: clamp(2rem, 5vw, 3rem);
+		letter-spacing: var(--tracking-tight);
+		margin-bottom: var(--spacing-4);
+	}
+
+	.docs-lede {
+		font-size: var(--font-size-lg);
+		color: var(--color-text-secondary);
+		margin-bottom: var(--spacing-6);
+	}
+
+	.docs-search-wrap {
+		max-width: 420px;
+		margin-bottom: var(--spacing-8);
+	}
+
+	.docs-stats {
+		display: flex;
+		gap: var(--spacing-8);
+	}
+
+	.docs-stats dt {
+		font-size: var(--font-size-xs);
+		letter-spacing: var(--tracking-wide);
+		text-transform: uppercase;
+		color: var(--color-muted);
+	}
+
+	.docs-stats dd {
+		font-size: var(--font-size-2xl);
+		font-weight: 700;
+	}
+
+	.docs-index h2,
+	.docs-version-list h2,
+	.docs-all h2 {
+		font-size: var(--font-size-sm);
+		letter-spacing: var(--tracking-wider);
+		text-transform: uppercase;
+		color: var(--color-muted);
+		margin-bottom: var(--spacing-4);
+	}
+
+	.docs-cards {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: var(--spacing-5);
+		margin-bottom: var(--spacing-12);
+	}
+
+	.docs-card {
+		display: block;
+		padding: var(--spacing-5);
+		border: 1px solid var(--color-border-subtle);
+		border-radius: var(--radius-lg);
+		background: var(--color-bg-subtle);
+		text-decoration: none;
+		color: inherit;
+		transition: border-color var(--transition-fast);
+	}
+
+	.docs-card:hover {
+		border-color: var(--color-accent);
+	}
+
+	.docs-card-kind {
+		font-size: var(--font-size-xs);
+		letter-spacing: var(--tracking-wide);
+		text-transform: uppercase;
+		color: var(--color-muted);
+		margin-bottom: var(--spacing-2);
+	}
+
+	.docs-card h3 {
+		font-size: var(--font-size-xl);
+		margin-bottom: var(--spacing-3);
+	}
+
+	.docs-card ul {
+		list-style: none;
+		color: var(--color-text-secondary);
+		font-size: var(--font-size-sm);
+	}
+
+	.docs-card li + li {
+		margin-top: 0.25rem;
+	}
+
+	.docs-version-list ul,
+	.docs-all ol {
+		list-style: none;
+		margin: 0 0 var(--spacing-10);
+		padding: 0;
+	}
+
+	.docs-version-list a,
+	.docs-all a {
+		display: flex;
+		flex-direction: column;
+		gap: 0.15rem;
+		padding: 0.7rem 0;
+		border-bottom: 1px solid var(--color-border-subtle);
+		text-decoration: none;
+		color: inherit;
+	}
+
+	.docs-version-list span,
+	.docs-all code {
+		font-size: var(--font-size-sm);
+		color: var(--color-muted);
+	}
+
+	@media (max-width: 800px) {
+		.docs-cards {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>

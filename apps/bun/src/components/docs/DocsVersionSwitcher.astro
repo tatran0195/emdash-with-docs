@@ -1,0 +1,91 @@
+---
+import type { ContentVersion } from "emdash";
+import { docsHref } from "../../utils/docs";
+
+interface Props {
+	versions: ContentVersion[];
+	active: string;
+	/** Current doc path so switching versions tries to stay on the same page. */
+	currentPath: string;
+}
+
+const { versions, active, currentPath } = Astro.props;
+const defaultVersion = versions.find((version) => version.isDefault)?.slug ?? "current";
+
+function hrefFor(version: ContentVersion): string {
+	const prefix = version.slug === defaultVersion ? "/docs" : `/docs/${version.slug}`;
+	return docsHref(prefix, currentPath);
+}
+---
+
+{
+	versions.length > 1 && (
+		<div class="docs-versions">
+			<label class="docs-versions-label" for="docs-version">
+				Version
+			</label>
+			<select id="docs-version" class="docs-versions-select" data-docs-version>
+				{versions.map((version) => (
+					<option
+						value={hrefFor(version)}
+						selected={version.slug === active}
+					>
+						{version.label}
+						{version.isDefault ? " (latest)" : ""}
+						{version.isFrozen ? " · frozen" : ""}
+					</option>
+				))}
+			</select>
+		</div>
+	)
+}
+
+<script>
+	function bindVersionSelect() {
+		document.querySelectorAll<HTMLSelectElement>("[data-docs-version]").forEach((select) => {
+			if (select.dataset.bound === "1") return;
+			select.dataset.bound = "1";
+			select.addEventListener("change", () => {
+				if (select.value) window.location.assign(select.value);
+			});
+		});
+	}
+	bindVersionSelect();
+	document.addEventListener("astro:page-load", bindVersionSelect);
+</script>
+
+<style>
+	.docs-versions {
+		display: flex;
+		flex-direction: column;
+		gap: 0.35rem;
+		margin-bottom: var(--spacing-4);
+	}
+
+	.docs-versions-label {
+		font-size: var(--font-size-xs);
+		font-weight: 600;
+		letter-spacing: var(--tracking-wide);
+		text-transform: uppercase;
+		color: var(--color-muted);
+	}
+
+	.docs-versions-select {
+		width: 100%;
+		padding: 0.4rem 0.55rem;
+		font-family: var(--font-sans);
+		font-size: var(--font-size-sm);
+		color: var(--color-text);
+		background: var(--color-bg);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius);
+		cursor: pointer;
+	}
+
+	.docs-versions-select:focus,
+	.docs-versions-select:focus-visible {
+		outline: none;
+		border-color: var(--color-accent);
+		box-shadow: 0 0 0 3px var(--color-accent-ring);
+	}
+</style>

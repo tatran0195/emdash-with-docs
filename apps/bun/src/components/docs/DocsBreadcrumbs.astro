@@ -1,0 +1,77 @@
+---
+import type { DocCrumb } from "emdash";
+import { docsHref } from "../../utils/docs";
+
+interface Props {
+	crumbs: DocCrumb[];
+	prefix: string;
+	homeHref?: string;
+	homeLabel?: string;
+}
+
+const { crumbs, prefix, homeHref = "/", homeLabel = "Home" } = Astro.props;
+---
+
+<nav class="docs-crumbs" aria-label="Breadcrumb">
+	<ol>
+		<li>
+			<a href={homeHref}>{homeLabel}</a>
+		</li>
+		<li>
+			<a href={prefix}>Docs</a>
+		</li>
+		{
+			crumbs.map((crumb, index) => {
+				const last = index === crumbs.length - 1;
+				return (
+					<li>
+						{last ? (
+							<span aria-current="page">{crumb.title}</span>
+						) : (
+							<a href={docsHref(prefix, crumb.path)}>{crumb.title}</a>
+						)}
+					</li>
+				);
+			})
+		}
+	</ol>
+</nav>
+
+<style>
+	.docs-crumbs ol {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.35rem 0.45rem;
+		list-style: none;
+		margin: 0 0 var(--spacing-4);
+		padding: 0;
+		font-size: var(--font-size-sm);
+		color: var(--color-muted);
+	}
+
+	.docs-crumbs li {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.45rem;
+	}
+
+	.docs-crumbs li + li::before {
+		content: "/";
+		color: var(--color-border);
+	}
+
+	.docs-crumbs a {
+		color: var(--color-text-secondary);
+		text-decoration: none;
+	}
+
+	.docs-crumbs a:hover {
+		color: var(--color-accent);
+	}
+
+	.docs-crumbs [aria-current="page"] {
+		color: var(--color-text);
+		font-weight: 500;
+	}
+</style>

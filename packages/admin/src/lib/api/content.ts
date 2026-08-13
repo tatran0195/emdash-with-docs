@@ -1,0 +1,747 @@
+/**
+ * Content CRUD and revision APIs
+ */
+
+import { i18n } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
+
+import type { BylineCreditInput, BylineSummary } from "./bylines.js";
+import {
+	API_BASE,
+	apiFetch,
+	parseApiResponse,
+	throwResponseError,
+	type FindManyResult,
+} from "./client.js";
+
+/**
+ * Derive draft status from a content item's revision pointers
+ */
+export function getDraftStatus(
+	item: ContentItem,
+): "unpublished" | "published" | "published_with_changes" {
+	if (!item.liveRevisionId) return "unpublished";
+	if (item.draftRevisionId && item.draftRevisionId !== item.liveRevisionId)
+		return "published_with_changes";
+	return "published";
+}
+
+/** SEO metadata for a content item */
+export interface ContentSeo {
+	title: string | null;
+	description: string | null;
+	image: string | null;
+	canonical: string | null;
+	noIndex: boolean;
+}
+
+export interface ContentItem {
+	id: string;
+	type: string;
+	slug: string | null;
+	status: string;
+	locale: string;
+	translationGroup: string | null;
+	data: Record<string, unknown>;
+	authorId: string | null;
+	primaryBylineId: string | null;
+	byline?: BylineSummary | null;
+	bylines?: Array<{
+		byline: BylineSummary;
+		sortOrder: number;
+		roleLabel: string | null;
+	}>;
+	createdAt: string;
+	updatedAt: string;
+	publishedAt: string | null;
+	scheduledAt: string | null;
+	liveRevisionId: string | null;
+	draftRevisionId: string | null;
+	parentId?: string | null;
+	sortOrder?: number;
+	nodeKind?: "doc" | "section";
+	path?: string | null;
+	versionSlug?: string;
+	seo?: ContentSeo;
+}
+
+export interface CreateContentInput {
+	type: string;
+	slug?: string;
+	data: Record<string, unknown>;
+	status?: string;
+	bylines?: BylineCreditInput[];
+	locale?: string;
+	translationOf?: string;
+	parentId?: string | null;
+	sortOrder?: number;
+	nodeKind?: "doc" | "section";
+	versionSlug?: string;
+}
+
+export interface TranslationSummary {
+	id: string;
+	locale: string;
+	slug: string | null;
+	status: string;
+	updatedAt: string;
+}
+
+export interface TranslationsResponse {
+	translationGroup: string;
+	translations: TranslationSummary[];
+}
+
+/**
+ * Fetch translations for a content item
+ */
+export async function fetchTranslations(
+	collection: string,
+	id: string,
+): Promise<TranslationsResponse> {
+	const response = await apiFetch(`${API_BASE}/content/${collection}/${id}/translations`);
+	return parseApiResponse<TranslationsResponse>(response, "Failed to fetch translations");
+}
+
+/** Input for updating SEO fields on content */
+export interface ContentSeoInput {
+	title?: string | null;
+	description?: string | null;
+	image?: string | null;
+	canonical?: string | null;
+	noIndex?: boolean;
+}
+
+export interface UpdateContentInput {
+	data?: Record<string, unknown>;
+	slug?: string;
+	status?: string;
+	publishedAt?: string | null;
+	authorId?: string | null;
+	bylines?: BylineCreditInput[];
+	/** Skip revision creation (used by autosave) */
+		skipRevision?: boolean;
+	seo?: ContentSeoInput;
+	parentId?: string | null;
+	sortOrder?: number;
+	nodeKind?: "doc" | "section";
+	versionSlug?: string;
+}
+
+/**
+ * Trashed content item with deletion timestamp
+ */
+export interface TrashedContentItem extends ContentItem {
+	deletedAt: string;
+}
+
+/**
+ * Preview URL response
+ */
+export interface PreviewUrlResponse {
+	url: string;
+	expiresAt: number;
+}
+
+/**
+ * Fetch content list
+ */
+/** Timestamp column a content-list date range can target. */
+export type ContentDateField = "createdAt" | "updatedAt" | "publishedAt";
+
+export async function fetchContentList(
+	collection: string,
+	options?: {
+		cursor?: string;
+		limit?: number;
+		status?: string;
+		locale?: string;
+		/** Field name to order by, matching the server's whitelist. */
+		orderBy?: string;
+		/** Sort direction; defaults to "desc" on the server. */
+		order?: "asc" | "desc";
+		/** Search across display fields, slug, and searchable custom fields. */
+		search?: string;
+		/** Filter to entries authored by this user (the `author_id` column). */
+		authorId?: string;
+		/** Which timestamp column the `dateFrom`/`dateTo` range applies to. */
+		dateField?: ContentDateField;
+		/** Inclusive lower bound (ISO date or datetime). Requires `dateField`. */
+		dateFrom?: string;
+		/** Inclusive upper bound (ISO date or datetime). Requires `dateField`. */
+		dateTo?: string;
+	},
+): Promise<FindManyResult<ContentItem>> {
+	const params = new URLSearchParams();
+	if (options?.cursor) params.set("cursor", options.cursor);
+	if (options?.limit) params.set("limit", String(options.limit));
+	if (options?.status) params.set("status", options.status);
+	if (options?.locale) params.set("locale", options.locale);
+	if (options?.orderBy) params.set("orderBy", options.orderBy);
+	if (options?.order) params.set("order", options.order);
+	if (options?.search) params.set("q", options.search);
+	if (options?.authorId) params.set("authorId", options.authorId);
+	// A date range is only meaningful with a target field; send all three
+	// together so the server doesn't reject a half-specified filter.
+	if (options?.dateField && (options.dateFrom || options.dateTo)) {
+		params.set("dateField", options.dateField);
+		if (options.dateFrom) params.set("dateFrom", options.dateFrom);
+		if (options.dateTo) params.set("dateTo", options.dateTo);
+	}
+
+	const url = `${API_BASE}/content/${collection}${params.toString() ? `?${params}` : ""}`;
+	const response = await apiFetch(url);
+	return parseApiResponse<FindManyResult<ContentItem>>(response, "Failed to fetch content");
+}
+
+/** A distinct content author, for the admin author filter. */
+export interface ContentAuthor {
+	id: string;
+	name: string | null;
+	email: string;
+	avatarUrl: string | null;
+}
+
+/**
+ * Fetch the distinct authors of a collection's content. Gated on
+ * `content:read`, so unlike the user-management API it's available to any
+ * editor. Returns only users who have authored at least one live entry.
+ */
+export async function fetchContentAuthors(collection: string): Promise<ContentAuthor[]> {
+	const response = await apiFetch(`${API_BASE}/content/${collection}/authors`);
+	const data = await parseApiResponse<{ items: ContentAuthor[] }>(
+		response,
+		"Failed to fetch content authors",
+	);
+	return data.items;
+}
+
+/**
+ * Fetch single content item
+ */
+export async function fetchContent(
+	collection: string,
+	id: string,
+	options?: { locale?: string },
+): Promise<ContentItem> {
+	const params = new URLSearchParams();
+	if (options?.locale) params.set("locale", options.locale);
+	const query = params.toString() ? `?${params}` : "";
+	const response = await apiFetch(`${API_BASE}/content/${collection}/${id}${query}`);
+	const data = await parseApiResponse<{ item: ContentItem }>(response, "Failed to fetch content");
+	return data.item;
+}
+
+/**
+ * Create content
+ */
+export async function createContent(
+	collection: string,
+	input: Omit<CreateContentInput, "type">,
+): Promise<ContentItem> {
+	const response = await apiFetch(`${API_BASE}/content/${collection}`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({
+			data: input.data,
+			slug: input.slug,
+			status: input.status,
+			bylines: input.bylines,
+			locale: input.locale,
+			translationOf: input.translationOf,
+			parentId: input.parentId,
+			sortOrder: input.sortOrder,
+			nodeKind: input.nodeKind,
+			versionSlug: input.versionSlug,
+		}),
+	});
+	const data = await parseApiResponse<{ item: ContentItem }>(response, "Failed to create content");
+	return data.item;
+}
+
+/**
+ * Update content
+ */
+export async function updateContent(
+	collection: string,
+	id: string,
+	input: UpdateContentInput,
+	options?: { locale?: string },
+): Promise<ContentItem> {
+	const params = new URLSearchParams();
+	if (options?.locale) params.set("locale", options.locale);
+	const query = params.toString() ? `?${params}` : "";
+	const response = await apiFetch(`${API_BASE}/content/${collection}/${id}${query}`, {
+		method: "PUT",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(input),
+	});
+	const data = await parseApiResponse<{ item: ContentItem }>(response, "Failed to update content");
+	return data.item;
+}
+
+/**
+ * Delete content (moves to trash)
+ */
+export async function deleteContent(
+	collection: string,
+	id: string,
+	options?: { locale?: string },
+): Promise<void> {
+	const params = new URLSearchParams();
+	if (options?.locale) params.set("locale", options.locale);
+	const query = params.toString() ? `?${params}` : "";
+	const response = await apiFetch(`${API_BASE}/content/${collection}/${id}${query}`, {
+		method: "DELETE",
+	});
+	if (!response.ok) await throwResponseError(response, i18n._(msg`Failed to delete content`));
+}
+
+/**
+ * Fetch trashed content list
+ */
+export async function fetchTrashedContent(
+	collection: string,
+	options?: {
+		cursor?: string;
+		limit?: number;
+	},
+): Promise<FindManyResult<TrashedContentItem>> {
+	const params = new URLSearchParams();
+	if (options?.cursor) params.set("cursor", options.cursor);
+	if (options?.limit) params.set("limit", String(options.limit));
+
+	const url = `${API_BASE}/content/${collection}/trash${params.toString() ? `?${params}` : ""}`;
+	const response = await apiFetch(url);
+	return parseApiResponse<FindManyResult<TrashedContentItem>>(
+		response,
+		"Failed to fetch trashed content",
+	);
+}
+
+/**
+ * Restore content from trash
+ */
+export async function restoreContent(collection: string, id: string): Promise<void> {
+	const response = await apiFetch(`${API_BASE}/content/${collection}/${id}/restore`, {
+		method: "POST",
+	});
+	if (!response.ok) await throwResponseError(response, i18n._(msg`Failed to restore content`));
+}
+
+/**
+ * Permanently delete content (cannot be undone)
+ */
+export async function permanentDeleteContent(collection: string, id: string): Promise<void> {
+	const response = await apiFetch(`${API_BASE}/content/${collection}/${id}/permanent`, {
+		method: "DELETE",
+	});
+	if (!response.ok)
+		await throwResponseError(response, i18n._(msg`Failed to permanently delete content`));
+}
+
+/**
+ * Duplicate content (creates a draft copy)
+ */
+export async function duplicateContent(collection: string, id: string): Promise<ContentItem> {
+	const response = await apiFetch(`${API_BASE}/content/${collection}/${id}/duplicate`, {
+		method: "POST",
+	});
+	const data = await parseApiResponse<{ item: ContentItem }>(
+		response,
+		"Failed to duplicate content",
+	);
+	return data.item;
+}
+
+/**
+ * Schedule content for future publishing
+ */
+export async function scheduleContent(
+	collection: string,
+	id: string,
+	scheduledAt: string,
+	options?: { locale?: string },
+): Promise<ContentItem> {
+	const params = new URLSearchParams();
+	if (options?.locale) params.set("locale", options.locale);
+	const query = params.toString() ? `?${params}` : "";
+	const response = await apiFetch(`${API_BASE}/content/${collection}/${id}/schedule${query}`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ scheduledAt }),
+	});
+	const data = await parseApiResponse<{ item: ContentItem }>(
+		response,
+		"Failed to schedule content",
+	);
+	return data.item;
+}
+
+/**
+ * Unschedule content (revert to draft)
+ */
+export async function unscheduleContent(
+	collection: string,
+	id: string,
+	options?: { locale?: string },
+): Promise<ContentItem> {
+	const params = new URLSearchParams();
+	if (options?.locale) params.set("locale", options.locale);
+	const query = params.toString() ? `?${params}` : "";
+	const response = await apiFetch(`${API_BASE}/content/${collection}/${id}/schedule${query}`, {
+		method: "DELETE",
+	});
+	const data = await parseApiResponse<{ item: ContentItem }>(
+		response,
+		"Failed to unschedule content",
+	);
+	return data.item;
+}
+
+/**
+ * Get a preview URL for content
+ *
+ * Returns a signed URL that allows viewing draft content.
+ * Returns null if the EmDash runtime isn't initialized on the server
+ * (responds with NOT_CONFIGURED). The preview secret itself no longer
+ * needs to be set explicitly — it auto-generates on first use.
+ */
+export async function getPreviewUrl(
+	collection: string,
+	id: string,
+	options?: {
+		expiresIn?: string;
+		pathPattern?: string;
+	},
+): Promise<PreviewUrlResponse | null> {
+	try {
+		const response = await apiFetch(`${API_BASE}/content/${collection}/${id}/preview-url`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(options || {}),
+		});
+
+		if (response.status === 500) {
+			// Preview not configured — check error code without consuming body for parseApiResponse
+			const body: unknown = await response.json().catch(() => ({}));
+			if (
+				typeof body === "object" &&
+				body !== null &&
+				"error" in body &&
+				typeof body.error === "object" &&
+				body.error !== null &&
+				"code" in body.error &&
+				body.error.code === "NOT_CONFIGURED"
+			) {
+				return null;
+			}
+			// Some other 500 error
+			throw new Error("Failed to get preview URL");
+		}
+
+		return parseApiResponse<PreviewUrlResponse>(response, "Failed to get preview URL");
+	} catch {
+		// If preview endpoint doesn't exist or fails, return null
+		return null;
+	}
+}
+
+// =============================================================================
+// Publishing (Draft Revisions)
+// =============================================================================
+
+/**
+ * Publish content - promotes current draft to live
+ */
+export async function publishContent(
+	collection: string,
+	id: string,
+	options?: { locale?: string },
+): Promise<ContentItem> {
+	const params = new URLSearchParams();
+	if (options?.locale) params.set("locale", options.locale);
+	const query = params.toString() ? `?${params}` : "";
+	const response = await apiFetch(`${API_BASE}/content/${collection}/${id}/publish${query}`, {
+		method: "POST",
+	});
+	const data = await parseApiResponse<{ item: ContentItem }>(response, "Failed to publish content");
+	return data.item;
+}
+
+/**
+ * Unpublish content - removes from public, preserves draft
+ */
+export async function unpublishContent(
+	collection: string,
+	id: string,
+	options?: { locale?: string },
+): Promise<ContentItem> {
+	const params = new URLSearchParams();
+	if (options?.locale) params.set("locale", options.locale);
+	const query = params.toString() ? `?${params}` : "";
+	const response = await apiFetch(`${API_BASE}/content/${collection}/${id}/unpublish${query}`, {
+		method: "POST",
+	});
+	const data = await parseApiResponse<{ item: ContentItem }>(
+		response,
+		"Failed to unpublish content",
+	);
+	return data.item;
+}
+
+/**
+ * Discard draft changes - reverts to live version
+ */
+export async function discardDraft(
+	collection: string,
+	id: string,
+	options?: { locale?: string },
+): Promise<ContentItem> {
+	const params = new URLSearchParams();
+	if (options?.locale) params.set("locale", options.locale);
+	const query = params.toString() ? `?${params}` : "";
+	const response = await apiFetch(`${API_BASE}/content/${collection}/${id}/discard-draft${query}`, {
+		method: "POST",
+	});
+	const data = await parseApiResponse<{ item: ContentItem }>(response, "Failed to discard draft");
+	return data.item;
+}
+
+/**
+ * Compare live and draft revisions
+ */
+export async function compareRevisions(
+	collection: string,
+	id: string,
+): Promise<{
+	hasChanges: boolean;
+	live: Record<string, unknown> | null;
+	draft: Record<string, unknown> | null;
+}> {
+	const response = await apiFetch(`${API_BASE}/content/${collection}/${id}/compare`);
+	return parseApiResponse<{
+		hasChanges: boolean;
+		live: Record<string, unknown> | null;
+		draft: Record<string, unknown> | null;
+	}>(response, "Failed to compare revisions");
+}
+
+// =============================================================================
+// Revision API
+// =============================================================================
+
+export interface Revision {
+	id: string;
+	collection: string;
+	entryId: string;
+	data: Record<string, unknown>;
+	authorId: string | null;
+	createdAt: string;
+}
+
+export interface RevisionListResponse {
+	items: Revision[];
+	total: number;
+}
+
+/**
+ * Fetch revisions for a content item
+ */
+export async function fetchRevisions(
+	collection: string,
+	entryId: string,
+	options?: { limit?: number },
+): Promise<RevisionListResponse> {
+	const params = new URLSearchParams();
+	if (options?.limit) params.set("limit", String(options.limit));
+
+	const url = `${API_BASE}/content/${collection}/${entryId}/revisions${params.toString() ? `?${params}` : ""}`;
+	const response = await apiFetch(url);
+	return parseApiResponse<RevisionListResponse>(response, "Failed to fetch revisions");
+}
+
+/**
+ * Get a specific revision
+ */
+export async function fetchRevision(revisionId: string): Promise<Revision> {
+	const response = await apiFetch(`${API_BASE}/revisions/${revisionId}`);
+
+	if (!response.ok) {
+		if (response.status === 404) {
+			throw new Error(`Revision not found: ${revisionId}`);
+		}
+		await throwResponseError(response, i18n._(msg`Failed to fetch revision`));
+	}
+
+	const data = await parseApiResponse<{ item: Revision }>(
+		response,
+		i18n._(msg`Failed to fetch revision`),
+	);
+	return data.item;
+}
+
+/**
+ * Restore a revision (updates content to this revision's data)
+ */
+export async function restoreRevision(revisionId: string): Promise<ContentItem> {
+	const response = await apiFetch(`${API_BASE}/revisions/${revisionId}/restore`, {
+		method: "POST",
+	});
+
+	if (!response.ok) {
+		if (response.status === 404) {
+			throw new Error(`Revision not found: ${revisionId}`);
+		}
+		await throwResponseError(response, i18n._(msg`Failed to restore revision`));
+	}
+
+	const data = await parseApiResponse<{ item: ContentItem }>(
+		response,
+		i18n._(msg`Failed to restore revision`),
+	);
+	return data.item;
+}
+
+// =============================================================================
+// Hierarchical tree
+// =============================================================================
+
+export type DocNodeKind = "doc" | "section";
+
+/** Nested sidebar node returned by GET /content/:collection/tree. */
+export interface DocTreeNode {
+	id: string;
+	translationGroup: string;
+	slug: string;
+	path: string;
+	title: string;
+	kind: DocNodeKind;
+	status: string;
+	stranded: boolean;
+	children: DocTreeNode[];
+}
+
+/**
+ * Fetch the ordered sidebar tree for a hierarchical collection.
+ */
+export async function fetchContentTree(
+	collection: string,
+	options?: { locale?: string; version?: string; status?: string },
+): Promise<DocTreeNode[]> {
+	const params = new URLSearchParams();
+	if (options?.locale) params.set("locale", options.locale);
+	if (options?.version) params.set("version", options.version);
+	if (options?.status) params.set("status", options.status);
+	const query = params.toString() ? `?${params}` : "";
+	const response = await apiFetch(`${API_BASE}/content/${collection}/tree${query}`);
+	const data = await parseApiResponse<{ tree: DocTreeNode[] }>(
+		response,
+		i18n._(msg`Failed to fetch content tree`),
+	);
+	return data.tree;
+}
+
+/**
+ * Move a node under a new parent. `parentId` is the parent's translation
+ * group, or null to make the node a root.
+ */
+export async function reparentContent(
+	collection: string,
+	id: string,
+	parentId: string | null,
+): Promise<ContentItem> {
+	const response = await apiFetch(`${API_BASE}/content/${collection}/${id}/reparent`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ parentId }),
+	});
+	const data = await parseApiResponse<{ item: ContentItem }>(
+		response,
+		i18n._(msg`Failed to move content`),
+	);
+	return data.item;
+}
+
+/**
+ * Reorder siblings under a parent. `ids` must be exactly the live sibling set
+ * in the desired order.
+ */
+export async function reorderContentTree(
+	collection: string,
+	input: {
+		parentId: string | null;
+		ids: string[];
+		locale?: string;
+		versionSlug?: string;
+	},
+): Promise<void> {
+	const response = await apiFetch(`${API_BASE}/content/${collection}/reorder`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(input),
+	});
+	if (!response.ok) await throwResponseError(response, i18n._(msg`Failed to reorder content`));
+}
+
+/** Catalog row for a versioned (Docusaurus-style) collection. */
+export interface ContentVersion {
+	id: string;
+	collection: string;
+	slug: string;
+	label: string;
+	isDefault: boolean;
+	isFrozen: boolean;
+	sortOrder: number;
+	createdAt: string;
+}
+
+/**
+ * List version catalog rows. Empty when the collection is not versioned.
+ */
+export async function fetchContentVersions(collection: string): Promise<ContentVersion[]> {
+	const response = await apiFetch(`${API_BASE}/content/${collection}/versions`);
+	const data = await parseApiResponse<{ versions: ContentVersion[] }>(
+		response,
+		i18n._(msg`Failed to fetch versions`),
+	);
+	return data.versions;
+}
+
+/**
+ * Snapshot the default version into a new frozen version.
+ */
+export async function cutContentVersion(
+	collection: string,
+	input: { slug: string; label: string },
+): Promise<{ version: ContentVersion; copied: number }> {
+	const response = await apiFetch(`${API_BASE}/content/${collection}/versions`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(input),
+	});
+	return parseApiResponse<{ version: ContentVersion; copied: number }>(
+		response,
+		i18n._(msg`Failed to cut version`),
+	);
+}
+
+/**
+ * Update a version catalog row (label / default / frozen).
+ */
+export async function updateContentVersion(
+	collection: string,
+	slug: string,
+	input: { label?: string; isDefault?: boolean; isFrozen?: boolean },
+): Promise<ContentVersion> {
+	const response = await apiFetch(`${API_BASE}/content/${collection}/versions/${slug}`, {
+		method: "PATCH",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(input),
+	});
+	const data = await parseApiResponse<{ version: ContentVersion }>(
+		response,
+		i18n._(msg`Failed to update version`),
+	);
+	return data.version;
+}

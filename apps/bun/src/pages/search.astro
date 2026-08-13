@@ -1,0 +1,191 @@
+---
+export const prerender = false;
+
+import { search, getEmDashTree } from "emdash";
+import Base from "../layouts/Base.astro";
+import { findNodeBySlug } from "../utils/docs";
+
+const query = Astro.url.searchParams.get("q")?.trim() || "";
+const scope = Astro.url.searchParams.get("in") === "docs" ? "docs" : "all";
+const collections = scope === "docs" ? ["docs"] : ["docs", "posts", "pages"];
+
+const { items: results } = query
+	? await search(query, { collections, limit: 30 })
+	: { items: [] };
+
+const { tree } = await getEmDashTree("docs");
+
+function hrefFor(result: (typeof results)[number]): string {
+	if (result.collection === "docs") {
+		const node = findNodeBySlug(tree, result.slug ?? "");
+		if (node) return `/docs/${node.path}`;
+		return `/docs/${result.slug ?? result.id}`;
+	}
+	if (result.collection === "pages") {
+		return `/pages/${result.slug ?? result.id}`;
+	}
+	return `/posts/${result.slug ?? result.id}`;
+}
+---
+
+<Base
+	title={query ? `Search: ${query}` : "Search"}
+	description="Search posts, pages, and documentation"
+>
+	<section class="search-page">
+		<h1 class="search-title">Search</h1>
+
+		<form method="get" action="/search" class="search-form">
+			<input
+				type="search"
+				name="q"
+				value={query}
+				placeholder="Search posts and docs…"
+				class="search-input"
+				autofocus
+			/>
+			<select name="in" class="search-scope" aria-label="Search in">
+				<option value="all" selected={scope === "all"}>Everything</option>
+				<option value="docs" selected={scope === "docs"}>Docs only</option>
+			</select>
+			<button type="submit" class="search-button">Search</button>
+		</form>
+
+		{
+			query && (
+				<p class="search-summary">
+					{results.length === 0
+						? `No results for “${query}”`
+						: `${results.length} result${results.length === 1 ? "" : "s"} for “${query}”`}
+				</p>
+			)
+		}
+
+		{
+			results.length > 0 && (
+				<ol class="search-results">
+					{results.map((result) => (
+						<li class="search-result">
+							<a href={hrefFor(result)} class="result-link">
+								<p class="result-collection">{result.collection}</p>
+								<h2 class="result-title">{result.title ?? "Untitled"}</h2>
+								{result.snippet && <p class="result-snippet" set:html={result.snippet} />}
+							</a>
+						</li>
+					))}
+				</ol>
+			)
+		}
+
+		{!query && <p class="search-hint">Search the blog and the hierarchical docs tree.</p>}
+	</section>
+</Base>
+
+<style>
+	.search-page {
+		max-width: var(--max-width);
+		margin: 0 auto;
+		padding: var(--spacing-8) var(--spacing-6) var(--spacing-16);
+	}
+
+	.search-title {
+		font-size: var(--font-size-2xl);
+		margin-bottom: var(--spacing-6);
+	}
+
+	.search-form {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--spacing-2);
+		margin-bottom: var(--spacing-8);
+	}
+
+	.search-input {
+		flex: 1 1 220px;
+		padding: var(--spacing-2) var(--spacing-4);
+		font-size: var(--font-size-base);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius);
+		background: var(--color-bg);
+		color: var(--color-text);
+	}
+
+	.search-input:focus {
+		outline: none;
+		border-color: var(--color-accent);
+	}
+
+	.search-scope,
+	.search-button {
+		padding: var(--spacing-2) var(--spacing-4);
+		font-size: var(--font-size-base);
+		border-radius: var(--radius);
+		font-family: var(--font-sans);
+	}
+
+	.search-scope {
+		border: 1px solid var(--color-border);
+		background: var(--color-bg);
+		color: var(--color-text);
+	}
+
+	.search-button {
+		background: var(--color-accent);
+		color: var(--color-on-accent);
+		border: none;
+		cursor: pointer;
+		font-weight: 500;
+	}
+
+	.search-summary,
+	.search-hint {
+		color: var(--color-muted);
+		margin-bottom: var(--spacing-6);
+	}
+
+	.search-results {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+	}
+
+	.search-result {
+		padding: var(--spacing-6) 0;
+		border-bottom: 1px solid var(--color-border-subtle);
+	}
+
+	.result-link {
+		display: block;
+		text-decoration: none;
+		color: inherit;
+	}
+
+	.result-collection {
+		font-size: var(--font-size-xs);
+		letter-spacing: var(--tracking-wide);
+		text-transform: uppercase;
+		color: var(--color-accent);
+		margin-bottom: 0.25rem;
+	}
+
+	.result-title {
+		font-size: var(--font-size-xl);
+		font-weight: 600;
+		margin-bottom: var(--spacing-2);
+	}
+
+	.result-link:hover .result-title {
+		color: var(--color-accent);
+	}
+
+	.result-snippet {
+		color: var(--color-text-secondary);
+	}
+
+	.result-snippet :global(mark) {
+		background: var(--color-accent-ring);
+		color: inherit;
+		padding: 0 0.1em;
+		border-radius: 2px;
+	}
+</style>

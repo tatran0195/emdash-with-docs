@@ -1,0 +1,73 @@
+---
+import {
+	getEmDashEntryByPath,
+	getEmDashTree,
+	getEmDashBreadcrumbs,
+	getEmDashNeighbors,
+	getEmDashVersions,
+	getSeoMeta,
+} from "emdash";
+import { PortableText } from "emdash/ui";
+import Base from "../../layouts/Base.astro";
+import DocsLayout from "../../components/docs/DocsLayout.astro";
+import { parseDocsRoute, resolveFallbackPath } from "../../utils/docs";
+
+const raw = Astro.params.path;
+const rawPath = Array.isArray(raw) ? raw.join("/") : (raw ?? "");
+
+const { versions } = await getEmDashVersions("docs");
+const route = parseDocsRoute(rawPath, versions);
+
+if (!route.path) {
+	const { tree } = await getEmDashTree("docs", { version: route.version });
+	const first = resolveFallbackPath(tree, "getting-started/introduction");
+	return Astro.redirect(first ? `${route.prefix}/${first}` : route.prefix);
+}
+
+const [{ entry: doc, cacheHint }, { tree }, { crumbs }, { neighbors }] = await Promise.all([
+	getEmDashEntryByPath("docs", route.path, { version: route.version }),
+	getEmDashTree("docs", { version: route.version }),
+	getEmDashBreadcrumbs("docs", route.path, { version: route.version }),
+	getEmDashNeighbors("docs", route.path, { version: route.version }),
+]);
+
+if (!doc) {
+	const fallback = resolveFallbackPath(tree, route.path);
+	if (fallback && fallback !== route.path) {
+		return Astro.redirect(`${route.prefix}/${fallback}`);
+	}
+	return Astro.redirect("/404");
+}
+
+if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
+
+const seo = getSeoMeta(doc, {
+	siteTitle: "Docs",
+	siteUrl: Astro.url.origin,
+	path: `${route.prefix}/${route.path}`,
+});
+
+const kind = doc.data.nodeKind === "section" ? "section" : "doc";
+---
+
+<Base
+	title={seo.title}
+	pageTitle={seo.ogTitle}
+	description={seo.description}
+	canonical={seo.canonical}
+	content={{ collection: "docs", id: doc.data.id, slug: doc.data.slug }}
+>
+	<DocsLayout
+		tree={tree}
+		versions={versions}
+		activeVersion={route.version}
+		activePath={route.path}
+		prefix={route.prefix}
+		crumbs={crumbs}
+		neighbors={neighbors}
+		kind={kind}
+	>
+		<h1 {...doc.edit.title}>{doc.data.title}</h1>
+		<PortableText value={doc.data.content} />
+	</DocsLayout>
+</Base>

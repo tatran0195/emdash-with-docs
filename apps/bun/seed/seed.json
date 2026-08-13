@@ -1,0 +1,2407 @@
+{
+	"$schema": "https://emdashcms.com/seed.schema.json",
+	"version": "1",
+	"meta": {
+		"name": "Bun Demo",
+		"description": "Blog + hierarchical, versioned docs on Bun, SQLite, and local files",
+		"author": "EmDash"
+	},
+	"settings": {
+		"title": "EmDash Bun",
+		"tagline": "Blog + versioned docs on Bun, SQLite, and local files."
+	},
+	"collections": [
+		{
+			"slug": "posts",
+			"label": "Posts",
+			"labelSingular": "Post",
+			"supports": [
+				"drafts",
+				"revisions",
+				"search",
+				"seo"
+			],
+			"commentsEnabled": true,
+			"fields": [
+				{
+					"slug": "title",
+					"label": "Title",
+					"type": "string",
+					"required": true,
+					"searchable": true
+				},
+				{
+					"slug": "featured_image",
+					"label": "Featured Image",
+					"type": "image"
+				},
+				{
+					"slug": "content",
+					"label": "Content",
+					"type": "portableText",
+					"searchable": true
+				},
+				{
+					"slug": "excerpt",
+					"label": "Excerpt",
+					"type": "text"
+				}
+			],
+			"urlPattern": "/posts/{slug}"
+		},
+		{
+			"slug": "pages",
+			"label": "Pages",
+			"labelSingular": "Page",
+			"supports": [
+				"drafts",
+				"revisions",
+				"search"
+			],
+			"fields": [
+				{
+					"slug": "title",
+					"label": "Title",
+					"type": "string",
+					"required": true,
+					"searchable": true
+				},
+				{
+					"slug": "content",
+					"label": "Content",
+					"type": "portableText",
+					"searchable": true
+				}
+			],
+			"urlPattern": "/pages/{slug}"
+		},
+		{
+			"slug": "docs",
+			"label": "Docs",
+			"labelSingular": "Doc",
+			"urlPattern": "/docs/{path}",
+			"supports": [
+				"drafts",
+				"revisions",
+				"search",
+				"seo",
+				"hierarchical",
+				"versioned"
+			],
+			"fields": [
+				{
+					"slug": "title",
+					"label": "Title",
+					"type": "string",
+					"required": true,
+					"searchable": true
+				},
+				{
+					"slug": "content",
+					"label": "Content",
+					"type": "portableText",
+					"searchable": true
+				}
+			]
+		}
+	],
+	"taxonomies": [
+		{
+			"name": "category",
+			"label": "Categories",
+			"labelSingular": "Category",
+			"hierarchical": true,
+			"collections": [
+				"posts"
+			],
+			"terms": [
+				{
+					"slug": "development",
+					"label": "Development"
+				},
+				{
+					"slug": "design",
+					"label": "Design"
+				},
+				{
+					"slug": "notes",
+					"label": "Notes"
+				}
+			]
+		},
+		{
+			"name": "tag",
+			"label": "Tags",
+			"labelSingular": "Tag",
+			"hierarchical": false,
+			"collections": [
+				"posts"
+			],
+			"terms": [
+				{
+					"slug": "webdev",
+					"label": "Web Development"
+				},
+				{
+					"slug": "opinion",
+					"label": "Opinion"
+				},
+				{
+					"slug": "tools",
+					"label": "Tools"
+				},
+				{
+					"slug": "creativity",
+					"label": "Creativity"
+				}
+			]
+		}
+	],
+	"bylines": [
+		{
+			"id": "byline-editorial",
+			"slug": "emdash-editorial",
+			"displayName": "EmDash Editorial"
+		},
+		{
+			"id": "byline-guest",
+			"slug": "guest-contributor",
+			"displayName": "Guest Contributor",
+			"isGuest": true
+		}
+	],
+	"menus": [
+		{
+			"name": "primary",
+			"label": "Primary Navigation",
+			"items": [
+				{
+					"type": "custom",
+					"label": "Home",
+					"url": "/"
+				},
+				{
+					"type": "custom",
+					"label": "Docs",
+					"url": "/docs"
+				},
+				{
+					"type": "custom",
+					"label": "About",
+					"url": "/pages/about"
+				},
+				{
+					"type": "custom",
+					"label": "Posts",
+					"url": "/posts"
+				}
+			]
+		}
+	],
+	"widgetAreas": [
+		{
+			"name": "sidebar",
+			"label": "Sidebar",
+			"description": "Widget area displayed on single post pages",
+			"widgets": [
+				{
+					"type": "component",
+					"componentId": "core:search",
+					"title": "Search"
+				},
+				{
+					"type": "component",
+					"componentId": "core:categories",
+					"title": "Categories"
+				},
+				{
+					"type": "component",
+					"componentId": "core:tags",
+					"title": "Tags"
+				},
+				{
+					"type": "component",
+					"componentId": "core:recent-posts",
+					"title": "Recent Posts",
+					"settings": {
+						"count": 5,
+						"showDate": true
+					}
+				},
+				{
+					"type": "component",
+					"componentId": "core:archives",
+					"title": "Archives",
+					"settings": {
+						"type": "monthly",
+						"limit": 6
+					}
+				}
+			]
+		},
+		{
+			"name": "footer",
+			"label": "Footer",
+			"description": "Widget area displayed in the site footer",
+			"widgets": [
+				{
+					"type": "content",
+					"title": "About",
+					"content": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "A blog about software, design, and the occasional stray thought."
+								}
+							]
+						}
+					]
+				}
+			]
+		}
+	],
+	"sections": [
+		{
+			"slug": "newsletter-signup",
+			"title": "Newsletter Signup",
+			"description": "A call-to-action block for newsletter subscriptions",
+			"keywords": [
+				"newsletter",
+				"subscribe",
+				"email",
+				"cta"
+			],
+			"source": "theme",
+			"content": [
+				{
+					"_type": "block",
+					"style": "h3",
+					"children": [
+						{
+							"_type": "span",
+							"text": "Stay in the loop"
+						}
+					]
+				},
+				{
+					"_type": "block",
+					"style": "normal",
+					"children": [
+						{
+							"_type": "span",
+							"text": "Get notified when new posts are published. No spam, unsubscribe anytime."
+						}
+					]
+				}
+			]
+		},
+		{
+			"slug": "about-author",
+			"title": "About the Author",
+			"description": "Brief author bio for use in posts or pages",
+			"keywords": [
+				"author",
+				"bio",
+				"about"
+			],
+			"source": "theme",
+			"content": [
+				{
+					"_type": "block",
+					"style": "normal",
+					"children": [
+						{
+							"_type": "span",
+							"text": "A software developer who writes about building things on the web. Based somewhere with good coffee and reliable internet."
+						}
+					]
+				}
+			]
+		}
+	],
+	"content": {
+		"pages": [
+			{
+				"id": "about",
+				"slug": "about",
+				"status": "published",
+				"data": {
+					"title": "About",
+					"content": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "A place for writing about software, design, and the occasional stray thought. No posting schedule, no newsletter funnel. Just things I wanted to write down."
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "Built with Astro and EmDash. The source is open if you want to see how it works."
+								}
+							]
+						}
+					]
+				}
+			}
+		],
+		"posts": [
+			{
+				"id": "post-1",
+				"slug": "building-for-the-long-term",
+				"status": "published",
+				"data": {
+					"title": "Building for the Long Term",
+					"excerpt": "The frameworks will change. The databases will change. What survives is the clarity of your thinking.",
+					"featured_image": {
+						"$media": {
+							"url": "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=1200&h=800&fit=crop",
+							"alt": "Code on a monitor in a dark room",
+							"filename": "building-long-term.jpg"
+						}
+					},
+					"content": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "Every few years the industry collectively decides that everything we've been doing is wrong and there's a better way. New frameworks, new paradigms, new build tools. The churn is relentless, and if you're not careful, you spend more time migrating than building."
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "I've been writing software long enough to have seen several of these cycles. jQuery to Backbone to Angular to React to whatever comes next. Each transition felt urgent at the time. Looking back, the things that actually mattered were rarely about the framework."
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"children": [
+								{
+									"_type": "span",
+									"text": "What survives"
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "Clean data models survive. Clear boundaries between systems survive. Good naming survives. The decision to keep things simple when you could have made them clever - that definitely survives."
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "What doesn't survive is code that was written to impress, abstractions built for problems that never materialized, and architectures designed around a framework's opinions rather than the domain's reality."
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "The best code I've written is boring. It reads like prose, does one thing well, and doesn't require a PhD in category theory to understand. The worst code I've written was technically impressive at the time."
+								}
+							]
+						}
+					]
+				},
+				"bylines": [
+					{
+						"byline": "byline-editorial"
+					},
+					{
+						"byline": "byline-guest",
+						"roleLabel": "Guest essay"
+					}
+				],
+				"taxonomies": {
+					"category": [
+						"development"
+					],
+					"tag": [
+						"opinion"
+					]
+				}
+			},
+			{
+				"id": "post-2",
+				"slug": "the-case-for-static",
+				"status": "published",
+				"data": {
+					"title": "The Case for Static",
+					"excerpt": "Static sites aren't a step backwards. They're what you get when you take performance and simplicity seriously.",
+					"featured_image": {
+						"$media": {
+							"url": "https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=1200&h=800&fit=crop",
+							"alt": "Laptop and coffee on a wooden table",
+							"filename": "case-for-static.jpg"
+						}
+					},
+					"content": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "There's a certain irony in the fact that the web started static, went dynamic, and is now swinging back toward static again. But the static sites of today aren't the hand-coded HTML pages of 1998. They're generated, optimized, and deployed to edge networks that serve them in milliseconds."
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "The pitch for server-rendered everything was compelling: dynamic content, personalization, real-time data. But most sites don't need most of that most of the time. A blog post doesn't need to be rendered on every request. A product page doesn't change every second."
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"children": [
+								{
+									"_type": "span",
+									"text": "The performance argument"
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "A static file served from a CDN is as fast as the web gets. No cold starts, no database queries, no server-side rendering overhead. The Time to First Byte is essentially the network latency to your nearest edge node. You can't beat physics."
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "And when you do need dynamic behavior, you can add it surgically. An island of interactivity in a sea of static HTML. The best of both worlds, without paying the cost of either at all times."
+								}
+							]
+						}
+					]
+				},
+				"bylines": [
+					{
+						"byline": "byline-editorial"
+					}
+				],
+				"taxonomies": {
+					"category": [
+						"development"
+					],
+					"tag": [
+						"webdev",
+						"opinion"
+					]
+				}
+			},
+			{
+				"id": "post-3",
+				"slug": "learning-in-public",
+				"status": "published",
+				"data": {
+					"title": "Learning in Public",
+					"excerpt": "Writing about what you're learning is the fastest way to find out what you don't actually understand.",
+					"featured_image": {
+						"$media": {
+							"url": "https://images.unsplash.com/photo-1432821596592-e2c18b78144f?w=1200&h=800&fit=crop",
+							"alt": "Notebook and pen on a desk",
+							"filename": "learning-in-public.jpg"
+						}
+					},
+					"content": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "I started writing about things I was learning not because I had anything original to say, but because I kept forgetting what I'd figured out. The blog posts were notes to my future self, published publicly more out of laziness than courage."
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "What I didn't expect was how much the writing itself would accelerate the learning. There's a particular kind of clarity that comes from trying to explain something to someone else. The gaps in your understanding, which you can happily ignore when the knowledge lives only in your head, become painfully obvious when you try to put it into sentences."
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"children": [
+								{
+									"_type": "span",
+									"text": "The fear of being wrong"
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "The biggest barrier isn't time or writing skill. It's the fear of publishing something that turns out to be wrong. But here's the thing: being wrong publicly is one of the most efficient ways to learn. Someone will correct you, often kindly, and you'll remember that correction forever."
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "The posts that helped me most weren't written by experts. They were written by people one step ahead of me on the same path, in language that hadn't yet been polished into abstraction. There's a place for that kind of writing, and it's more valuable than most people realize."
+								}
+							]
+						}
+					]
+				},
+				"taxonomies": {
+					"category": [
+						"notes"
+					],
+					"tag": [
+						"opinion"
+					]
+				}
+			},
+			{
+				"id": "post-4",
+				"slug": "small-tools-big-impact",
+				"status": "published",
+				"data": {
+					"title": "Small Tools, Big Impact",
+					"excerpt": "The best developer tools do one thing well and get out of your way. A love letter to focused software.",
+					"featured_image": {
+						"$media": {
+							"url": "https://images.unsplash.com/photo-1575026615908-666710ae5e47?w=1200&h=800&fit=crop",
+							"alt": "Wrenches and hand tools hanging on a workshop wall",
+							"filename": "small-tools.jpg"
+						}
+					},
+					"content": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "There's a class of software that doesn't get enough appreciation. Not the frameworks or the platforms or the IDEs, but the small, sharp tools that solve one problem so well you stop thinking about them. They become invisible, which is the highest compliment you can pay a tool."
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "I'm talking about things like ripgrep, which searches code so fast it changed how I think about searching. Or jq, which makes JSON feel like a first-class data format in the terminal. Or curl, which has been quietly powering the internet's plumbing for decades."
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"children": [
+								{
+									"_type": "span",
+									"text": "The Unix philosophy, revisited"
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "Do one thing well. The advice is old enough to be a cliche, but the best modern tools still follow it. They don't try to be platforms. They don't have plugin ecosystems or configuration languages or startup wizards. They do their job and they compose with other tools that do theirs."
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "The temptation is always to add more. One more feature, one more option, one more integration. But every addition is a decision someone has to make, a path through the code that has to be maintained, a thing that can break. The best tools resist this. They stay small, and in staying small, they stay reliable."
+								}
+							]
+						}
+					]
+				},
+				"taxonomies": {
+					"category": [
+						"development"
+					],
+					"tag": [
+						"tools"
+					]
+				}
+			},
+			{
+				"id": "post-5",
+				"slug": "designing-with-constraints",
+				"status": "published",
+				"data": {
+					"title": "Designing with Constraints",
+					"excerpt": "Limitations aren't obstacles to creativity. They're the structure that makes creativity possible.",
+					"featured_image": {
+						"$media": {
+							"url": "https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=1200&h=800&fit=crop",
+							"alt": "Pencils and design tools on a desk",
+							"filename": "designing-with-constraints.jpg"
+						}
+					},
+					"content": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "Give a designer a blank canvas and unlimited time, and they'll often produce something mediocre. Give them a tight brief, a small screen, and a deadline, and they'll surprise you. This isn't a paradox - it's how creativity actually works."
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "Constraints force decisions. When you can't use more than two typefaces, you have to choose carefully. When the page has to load in under a second, every element earns its place. When the interface has to work on a 320px screen, you discover what's truly essential."
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"children": [
+								{
+									"_type": "span",
+									"text": "Embracing the box"
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "The web itself is a constraint. HTML flows in one direction. CSS has a box model. Browsers have viewport sizes and font rendering quirks. You can fight these constraints or you can work with them, and the results are dramatically different."
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "The designs I admire most don't look like they were forced through a framework. They look like they grew naturally from the medium, respecting its grain rather than working against it. That only happens when you treat constraints as creative partners rather than enemies."
+								}
+							]
+						}
+					]
+				},
+				"taxonomies": {
+					"category": [
+						"design"
+					],
+					"tag": [
+						"creativity"
+					]
+				}
+			},
+			{
+				"id": "post-6",
+				"slug": "a-weekend-with-a-side-project",
+				"status": "published",
+				"data": {
+					"title": "A Weekend with a Side Project",
+					"excerpt": "No stakeholders, no deadlines, no Jira tickets. Just you and a dumb idea that might turn into something.",
+					"featured_image": {
+						"$media": {
+							"url": "https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=1200&h=800&fit=crop",
+							"alt": "Code on a screen with a dark theme",
+							"filename": "weekend-side-project.jpg"
+						}
+					},
+					"content": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "Saturday morning. Coffee's made, the house is quiet, and I've got an idea that's been nagging at me all week. Not a good idea, necessarily - just a persistent one. A small tool that does a thing I keep doing manually. How hard could it be?"
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "This is the best kind of programming. No requirements document, no sprint planning, no pull request reviews. Just a text editor and a problem. The freedom to make terrible architectural decisions, rewrite everything twice, and follow tangents that turn out to be dead ends."
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"children": [
+								{
+									"_type": "span",
+									"text": "Why side projects matter"
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "Side projects are where you learn things your day job would never teach you. Not because the problems are harder, but because you're free to take risks. Try a language you've never used. Build something without a framework. Deploy to a platform you've only read about. The stakes are zero, which makes the learning maximum."
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "By Sunday evening, the thing sort of works. It's rough, the error handling is nonexistent, and the README is a single sentence. But it solves the problem I set out to solve, and I learned three things I didn't know on Friday. Not a bad weekend."
+								}
+							]
+						}
+					]
+				},
+				"taxonomies": {
+					"category": [
+						"development"
+					],
+					"tag": [
+						"creativity"
+					]
+				}
+			},
+			{
+				"id": "post-7",
+				"slug": "notes-on-simplicity",
+				"status": "published",
+				"data": {
+					"title": "Notes on Simplicity",
+					"excerpt": "Simplicity isn't the absence of complexity. It's the result of understanding a problem well enough to solve it cleanly.",
+					"featured_image": {
+						"$media": {
+							"url": "https://images.unsplash.com/photo-1559051668-e1fa58f25786?w=1200&h=800&fit=crop",
+							"alt": "Geometric pattern carved into white paper",
+							"filename": "notes-on-simplicity.jpg"
+						}
+					},
+					"content": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "Every piece of software starts simple. A few files, a clear purpose, a small surface area. Then features get added, edge cases get handled, and before long you're looking at something that requires a diagram to understand. This isn't inevitable, but it takes discipline to prevent."
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "The hard part of simplicity isn't the initial design. It's the ongoing resistance to complication. Every feature request, every bug fix, every refactor is an opportunity to add complexity. Saying no is the most important design skill, and the least celebrated."
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"children": [
+								{
+									"_type": "span",
+									"text": "Removing as a feature"
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "The best version of a product often has fewer features than the previous one. Not because features were missing, but because someone had the courage to remove things that weren't earning their keep. Every feature has a cost - in maintenance, in cognitive load, in the weight of the interface."
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "Simplicity is a practice, not a destination. You never arrive at simple. You just keep asking: is this necessary? Could this be clearer? Is there a way to solve this problem by removing something instead of adding something? The answer is yes more often than you'd expect."
+								}
+							]
+						}
+					]
+				},
+				"taxonomies": {
+					"category": [
+						"notes"
+					],
+					"tag": [
+						"opinion"
+					]
+				}
+			},
+			{
+				"id": "post-draft",
+				"slug": "work-in-progress",
+				"status": "draft",
+				"data": {
+					"title": "Work in Progress",
+					"excerpt": "This post is still being written.",
+					"content": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"children": [
+								{
+									"_type": "span",
+									"text": "This is a draft post that won't appear in the public listing."
+								}
+							]
+						}
+					]
+				}
+			}
+		],
+		"docs": [
+			{
+				"id": "getting-started",
+				"slug": "getting-started",
+				"kind": "section",
+				"sortOrder": 0,
+				"status": "published",
+				"data": {
+					"title": "Getting started",
+					"content": [
+						{
+							"_type": "block",
+							"style": "h2",
+							"_key": "b0",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s0",
+									"text": "A folder that is also a page",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b1",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s1",
+									"text": "This section is a first-class document. Opening it in the sidebar loads this page \u2014 it is not just a grouping label.",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"_key": "b2",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s2",
+									"text": "What you get",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b3",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s3",
+									"text": "Arbitrary-depth tree, ordered sidebar, versioned snapshots, breadcrumbs, and previous/next links derived from tree position.",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"_key": "b4",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s4",
+									"text": "Run it locally",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b5",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s5",
+									"text": "This demo uses the Node adapter, SQLite at ./data.db, and local file storage. Start it with bun or node \u2014 no Cloudflare account.",
+									"marks": []
+								}
+							]
+						}
+					]
+				},
+				"version": "current"
+			},
+			{
+				"id": "introduction",
+				"slug": "introduction",
+				"kind": "doc",
+				"sortOrder": 0,
+				"status": "published",
+				"data": {
+					"title": "Introduction",
+					"content": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b0",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s0",
+									"text": "EmDash collections are just flags. Turn on hierarchical and versioned on a docs collection and keep pages and posts flat.",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"_key": "b1",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s1",
+									"text": "Beside pages and posts",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b2",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s2",
+									"text": "The default seed still ships posts and pages. Docs is an extra collection with its own URL pattern: /docs/{path}.",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"_key": "b3",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s3",
+									"text": "Path is computed",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b4",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s4",
+									"text": "The admin never sends path. The server joins ancestor slugs so moving a folder rewrites every descendant and can emit 301s.",
+									"marks": []
+								}
+							]
+						}
+					]
+				},
+				"parent": "getting-started",
+				"version": "current"
+			},
+			{
+				"id": "install",
+				"slug": "install",
+				"kind": "doc",
+				"sortOrder": 1,
+				"status": "published",
+				"data": {
+					"title": "Install",
+					"content": [
+						{
+							"_type": "block",
+							"style": "h2",
+							"_key": "b0",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s0",
+									"text": "Create the project",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b1",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s1",
+									"text": "bunx create-emdash@latest my-docs --yes",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b2",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s2",
+									"text": "That scaffolds the Bun/Node docs template: @astrojs/node, sqlite(), and local() storage.",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"_key": "b3",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s3",
+									"text": "This demo",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b4",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s4",
+									"text": "From the monorepo: bun run --filter @emdash-cms/demo-bun dev then open /_emdash/admin.",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"_key": "b5",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s5",
+									"text": "Enable the collection",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b6",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s6",
+									"text": "In Content types, create docs with Hierarchical and Versioned, then set the URL pattern to /docs/{path}.",
+									"marks": []
+								}
+							]
+						}
+					]
+				},
+				"parent": "getting-started",
+				"version": "current"
+			},
+			{
+				"id": "configure",
+				"slug": "configure",
+				"kind": "doc",
+				"sortOrder": 2,
+				"status": "published",
+				"data": {
+					"title": "Configure",
+					"content": [
+						{
+							"_type": "block",
+							"style": "h2",
+							"_key": "b0",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s0",
+									"text": "Adapter",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b1",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s1",
+									"text": "Use the standalone Node adapter. Bind the database to file:./data.db and store uploads under ./uploads.",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"_key": "b2",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s2",
+									"text": "URL pattern",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b3",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s3",
+									"text": "{path} must be the last token and must be prefixed. Bare /{path} is rejected because it would swallow the whole site.",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"_key": "b4",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s4",
+									"text": "Versions",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b5",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s5",
+									"text": "The default version stays unprefixed (/docs/guides/install). Other slugs are /docs/1.0/guides/install.",
+									"marks": []
+								}
+							]
+						}
+					]
+				},
+				"parent": "getting-started",
+				"version": "current"
+			},
+			{
+				"id": "guides",
+				"slug": "guides",
+				"kind": "section",
+				"sortOrder": 1,
+				"status": "published",
+				"data": {
+					"title": "Guides",
+					"content": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b0",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s0",
+									"text": "How the tree, versions, and cross-links work. Each child is a page; this folder is also a page.",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"_key": "b1",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s1",
+									"text": "In this section",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b2",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s2",
+									"text": "Hierarchical collections, versioned docs, and breadcrumbs & neighbors \u2014 including a nested cross-linking page.",
+									"marks": []
+								}
+							]
+						}
+					]
+				},
+				"version": "current"
+			},
+			{
+				"id": "hierarchical",
+				"slug": "hierarchical",
+				"kind": "doc",
+				"sortOrder": 0,
+				"status": "published",
+				"data": {
+					"title": "Hierarchical collections",
+					"content": [
+						{
+							"_type": "block",
+							"style": "h2",
+							"_key": "b0",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s0",
+									"text": "parent_id is a translation group",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b1",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s1",
+									"text": "parentId stores the parent's translation_group, not the row id. That is the same i18n pattern taxonomies use.",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"_key": "b2",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s2",
+									"text": "Folders are things",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b3",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s3",
+									"text": "node_kind is section or doc. A section has its own title, body, and URL. Deleting a section that still has children returns HAS_CHILDREN.",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"_key": "b4",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s4",
+									"text": "Ordered sidebar",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b5",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s5",
+									"text": "sort_order is sibling order. The admin tree reorders with up/down; the public sidebar walks the same order.",
+									"marks": []
+								}
+							]
+						}
+					]
+				},
+				"parent": "guides",
+				"version": "current"
+			},
+			{
+				"id": "versioned",
+				"slug": "versioned",
+				"kind": "doc",
+				"sortOrder": 1,
+				"status": "published",
+				"data": {
+					"title": "Versioned docs",
+					"content": [
+						{
+							"_type": "block",
+							"style": "h2",
+							"_key": "b0",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s0",
+									"text": "version_slug is not row version",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b1",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s1",
+									"text": "The optimistic-lock column stays named version. Docs versions live in version_slug plus the _emdash_content_versions catalog.",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"_key": "b2",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s2",
+									"text": "Cutting a version",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b3",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s3",
+									"text": "A cut freezes the new slug, copies every live row of the default version, mints new translation groups, remaps parent_id, and copies SEO, taxonomies, and bylines \u2014 not revision history.",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"_key": "b4",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s4",
+									"text": "Frozen writes",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b5",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s5",
+									"text": "Mutating a frozen version returns FROZEN_VERSION. Use the switcher in the sidebar to compare Next and 1.0.",
+									"marks": []
+								}
+							]
+						}
+					]
+				},
+				"parent": "guides",
+				"version": "current"
+			},
+			{
+				"id": "breadcrumbs",
+				"slug": "breadcrumbs",
+				"kind": "doc",
+				"sortOrder": 2,
+				"status": "published",
+				"data": {
+					"title": "Breadcrumbs & neighbors",
+					"content": [
+						{
+							"_type": "block",
+							"style": "h2",
+							"_key": "b0",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s0",
+									"text": "From tree position",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b1",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s1",
+									"text": "getEmDashBreadcrumbs and getEmDashNeighbors walk the same ordered tree as the sidebar. Sections participate in prev/next.",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"_key": "b2",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s2",
+									"text": "Cross-links",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b3",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s3",
+									"text": "Link to another node by its computed path, for example /docs/reference/query-api. See the nested Cross-linking page.",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"_key": "b4",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s4",
+									"text": "On this page",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b5",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s5",
+									"text": "The right-hand outline is built from h2/h3 headings in the article body.",
+									"marks": []
+								}
+							]
+						}
+					]
+				},
+				"parent": "guides",
+				"version": "current"
+			},
+			{
+				"id": "cross-linking",
+				"slug": "cross-linking",
+				"kind": "doc",
+				"sortOrder": 0,
+				"status": "published",
+				"data": {
+					"title": "Cross-linking",
+					"content": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b0",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s0",
+									"text": "This page is three levels deep: Guides \u2192 Breadcrumbs & neighbors \u2192 Cross-linking.",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"_key": "b1",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s1",
+									"text": "Stable paths",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b2",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s2",
+									"text": "Prefer path over id in public URLs. When a folder moves, descendant paths update and redirects can keep old links alive.",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"_key": "b3",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s3",
+									"text": "Related",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b4",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s4",
+									"text": "See Hierarchical collections and the Query API reference.",
+									"marks": []
+								}
+							]
+						}
+					]
+				},
+				"parent": "breadcrumbs",
+				"version": "current"
+			},
+			{
+				"id": "reference",
+				"slug": "reference",
+				"kind": "section",
+				"sortOrder": 2,
+				"status": "published",
+				"data": {
+					"title": "Reference",
+					"content": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b0",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s0",
+									"text": "Public query helpers and URL-pattern rules for hierarchical collections.",
+									"marks": []
+								}
+							]
+						}
+					]
+				},
+				"version": "current"
+			},
+			{
+				"id": "query-api",
+				"slug": "query-api",
+				"kind": "doc",
+				"sortOrder": 0,
+				"status": "published",
+				"data": {
+					"title": "Query API",
+					"content": [
+						{
+							"_type": "block",
+							"style": "h2",
+							"_key": "b0",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s0",
+									"text": "getEmDashTree",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b1",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s1",
+									"text": "Returns the ordered sidebar for a version and locale.",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"_key": "b2",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s2",
+									"text": "getEmDashEntryByPath",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b3",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s3",
+									"text": "Resolves guides/install (not the slug alone) inside a version.",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"_key": "b4",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s4",
+									"text": "getEmDashBreadcrumbs",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b5",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s5",
+									"text": "Crumbs from the root to the current node, including the current page.",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"_key": "b6",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s6",
+									"text": "getEmDashNeighbors",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b7",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s7",
+									"text": "Previous and next nodes in depth-first sidebar order.",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"_key": "b8",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s8",
+									"text": "getEmDashVersions",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b9",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s9",
+									"text": "Catalog rows. An empty catalog synthesizes a writable current version.",
+									"marks": []
+								}
+							]
+						}
+					]
+				},
+				"parent": "reference",
+				"version": "current"
+			},
+			{
+				"id": "url-patterns",
+				"slug": "url-patterns",
+				"kind": "doc",
+				"sortOrder": 1,
+				"status": "published",
+				"data": {
+					"title": "URL patterns",
+					"content": [
+						{
+							"_type": "block",
+							"style": "h2",
+							"_key": "b0",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s0",
+									"text": "Tokens",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b1",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s1",
+									"text": "Collections already understood {slug} and {id}. Hierarchical collections add {path} and {version}.",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"_key": "b2",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s2",
+									"text": "Rules",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b3",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s3",
+									"text": "{path} must be last. The pattern must have a prefix. {version} requires {path} or {slug}.",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"_key": "b4",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s4",
+									"text": "Peeling versions",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b5",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s5",
+									"text": "Templates peel the first segment when it is a known non-default version slug.",
+									"marks": []
+								}
+							]
+						}
+					]
+				},
+				"parent": "reference",
+				"version": "current"
+			},
+			{
+				"id": "cli",
+				"slug": "cli",
+				"kind": "doc",
+				"sortOrder": 2,
+				"status": "published",
+				"data": {
+					"title": "CLI",
+					"content": [
+						{
+							"_type": "block",
+							"style": "h2",
+							"_key": "b0",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s0",
+									"text": "Seed",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b1",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s1",
+									"text": "emdash seed applies collections, the version catalog, then content in parent-before-child order.",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"_key": "b2",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s2",
+									"text": "Export",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b3",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s3",
+									"text": "emdash export-seed writes hierarchical parent, kind, sortOrder, and version back out.",
+									"marks": []
+								}
+							]
+						}
+					]
+				},
+				"parent": "reference",
+				"version": "current"
+			},
+			{
+				"id": "changelog",
+				"slug": "changelog",
+				"kind": "doc",
+				"sortOrder": 3,
+				"status": "published",
+				"data": {
+					"title": "Changelog",
+					"content": [
+						{
+							"_type": "block",
+							"style": "h2",
+							"_key": "b0",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s0",
+									"text": "Bun demo",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b1",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s1",
+									"text": "Local SQLite + file storage, docs UI (sidebar, versions, crumbs, pager, TOC), and no Wrangler.",
+									"marks": []
+								}
+							]
+						}
+					]
+				},
+				"version": "current"
+			},
+			{
+				"id": "v1-getting-started",
+				"slug": "getting-started",
+				"kind": "section",
+				"sortOrder": 0,
+				"status": "published",
+				"data": {
+					"title": "Getting started",
+					"content": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b0",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s0",
+									"text": "Version 1.0 of the getting-started folder. This snapshot is frozen.",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"_key": "b1",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s1",
+									"text": "What shipped in 1.0",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b2",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s2",
+									"text": "Hierarchical docs beside pages and posts. Versioning landed after this cut.",
+									"marks": []
+								}
+							]
+						}
+					]
+				},
+				"version": "1.0"
+			},
+			{
+				"id": "v1-introduction",
+				"slug": "introduction",
+				"kind": "doc",
+				"sortOrder": 0,
+				"status": "published",
+				"data": {
+					"title": "Introduction",
+					"content": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b0",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s0",
+									"text": "The 1.0 introduction. Compare with Next to see how the live tree evolved.",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "h2",
+							"_key": "b1",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s1",
+									"text": "Beside pages and posts",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b2",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s2",
+									"text": "Docs is a collection flag, not a separate product.",
+									"marks": []
+								}
+							]
+						}
+					]
+				},
+				"parent": "v1-getting-started",
+				"version": "1.0"
+			},
+			{
+				"id": "v1-install",
+				"slug": "install",
+				"kind": "doc",
+				"sortOrder": 1,
+				"status": "published",
+				"data": {
+					"title": "Install",
+					"content": [
+						{
+							"_type": "block",
+							"style": "h2",
+							"_key": "b0",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s0",
+									"text": "Create the project",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b1",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s1",
+									"text": "npx create-emdash@latest my-docs",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b2",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s2",
+									"text": "1.0 still mentioned npm. The Next version prefers bunx and --yes.",
+									"marks": []
+								}
+							]
+						}
+					]
+				},
+				"parent": "v1-getting-started",
+				"version": "1.0"
+			},
+			{
+				"id": "v1-guides",
+				"slug": "guides",
+				"kind": "section",
+				"sortOrder": 1,
+				"status": "published",
+				"data": {
+					"title": "Guides",
+					"content": [
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b0",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s0",
+									"text": "1.0 guides section.",
+									"marks": []
+								}
+							]
+						}
+					]
+				},
+				"version": "1.0"
+			},
+			{
+				"id": "v1-hierarchical",
+				"slug": "hierarchical",
+				"kind": "doc",
+				"sortOrder": 0,
+				"status": "published",
+				"data": {
+					"title": "Hierarchical collections",
+					"content": [
+						{
+							"_type": "block",
+							"style": "h2",
+							"_key": "b0",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s0",
+									"text": "parent_id is a translation group",
+									"marks": []
+								}
+							]
+						},
+						{
+							"_type": "block",
+							"style": "normal",
+							"_key": "b1",
+							"markDefs": [],
+							"children": [
+								{
+									"_type": "span",
+									"_key": "s1",
+									"text": "Same contract as Next. The 1.0 page is shorter on purpose so the version switcher has something to compare.",
+									"marks": []
+								}
+							]
+						}
+					]
+				},
+				"parent": "v1-guides",
+				"version": "1.0"
+			}
+		]
+	},
+	"contentVersions": [
+		{
+			"collection": "docs",
+			"slug": "current",
+			"label": "Next",
+			"isDefault": true,
+			"sortOrder": 0
+		},
+		{
+			"collection": "docs",
+			"slug": "1.0",
+			"label": "1.0",
+			"isFrozen": false,
+			"sortOrder": 1
+		}
+	]
+}

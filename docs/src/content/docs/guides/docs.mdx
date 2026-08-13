@@ -1,0 +1,116 @@
+---
+title: Documentation Collections
+description: Build a Docusaurus-style docs tree beside pages and posts with folders, sidebar order, versions, and breadcrumbs.
+---
+
+import { Aside, Tabs, TabItem } from "@astrojs/starlight/components";
+
+EmDash docs are not a separate product. They are a collection — the same `posts` / `pages` model — with two extra `supports` flags:
+
+| Support          | What it adds                                                                 |
+| ---------------- | ---------------------------------------------------------------------------- |
+| `hierarchical`   | Arbitrary-depth tree, ordered sidebar, folders as real entries               |
+| `versioned`      | Docusaurus-style version catalog (`current` plus frozen snapshots)           |
+
+`versioned` requires `hierarchical`. Pages and posts stay flat.
+
+## Create a docs collection
+
+In **Content Types**, create a collection (for example `docs`) and enable **Hierarchical**. Optionally enable **Versioned**. Set the URL pattern to a prefixed catch-all:
+
+```
+/docs/{path}
+```
+
+`{path}` must be the last token and cannot stand alone as `/{path}` — that pattern is too greedy and is rejected.
+
+The starter **Docs** template ships this collection already. It runs locally with Bun (SQLite + local file storage) — no Cloudflare / D1 / R2. In the monorepo, `apps/bun` is the same stack with a full public docs chrome (sidebar, version switcher, breadcrumbs, pager, TOC). Start it with `pnpm dev`.
+
+<Aside>
+	The client never sends `path`. The server computes it from the parent chain and the entry slug.
+</Aside>
+
+## Folders are things
+
+A **section** is a real content entry with its own title, slug, body, and index page — not a grouping label. A **page** (`doc`) is a leaf. Both participate in the sidebar and in previous/next navigation.
+
+In the admin tree:
+
+- **Add section** creates a folder
+- **Add page** creates a leaf
+- The folder/page buttons on a row nest a child under that node's `translationGroup`
+
+`parentId` stores the parent's **translation group**, not its row id. That is the same i18n pattern taxonomies use: one parent identity across locales.
+
+## Query the tree
+
+```ts
+import {
+	getEmDashTree,
+	getEmDashEntryByPath,
+	getEmDashBreadcrumbs,
+	getEmDashNeighbors,
+	getEmDashVersions,
+} from "emdash";
+
+const { tree } = await getEmDashTree("docs");
+const { entry } = await getEmDashEntryByPath("docs", "guides/install");
+const { crumbs } = await getEmDashBreadcrumbs("docs", "guides/install");
+const { neighbors } = await getEmDashNeighbors("docs", "guides/install");
+```
+
+Pass `{ version: "1.0" }` to read a frozen snapshot. Omit it (or pass `current`) for the live tree.
+
+### Versioned URLs
+
+The default version is unprefixed (`/docs/guides/install`). Other versions peel the first segment:
+
+```
+/docs/1.0/guides/install
+```
+
+The docs templates call `getEmDashVersions("docs")`, treat a known non-default first segment as the version, and pass it to the tree/entry helpers.
+
+## Cut a version
+
+Cutting a version snapshots the **default** tree (usually `current`) into a new frozen slug:
+
+1. Insert `{ slug, is_frozen: 1 }` in the version catalog
+2. Copy every live row of the default version
+3. Mint a new `translation_group` per old group (do not reuse)
+4. Remap `parent_id` onto the new groups
+5. Copy SEO, taxonomies, and bylines — not revision history
+
+Frozen versions reject create / update / delete / reorder with `FROZEN_VERSION`. Recutting the same slug returns `VERSION_EXISTS`.
+
+```bash
+POST /_emdash/api/content/docs/versions
+{ "slug": "1.0", "label": "1.0" }
+```
+
+The admin tree shows a version switcher and a **Cut version** dialog on versioned collections. Frozen trees are read-only.
+
+## Path redirects
+
+Renaming `install` → `setup` under `guides` writes a 301 from `/docs/guides/install` to `/docs/guides/setup`, **and** every descendant whose computed path changed. The client still never sends `path`.
+
+Deleting a section that still has children fails with `HAS_CHILDREN`. Move or delete the children first.
+
+## REST and MCP
+
+| Endpoint / tool                         | Purpose                                      |
+| --------------------------------------- | -------------------------------------------- |
+| `GET /content/:collection/tree`         | Ordered sidebar                              |
+| `POST /content/:collection/:id/reparent`| Move under a new parent group                |
+| `POST /content/:collection/reorder`     | Reorder one sibling set                      |
+| `GET/POST /content/:collection/versions`| List catalog / cut a frozen snapshot         |
+| `content_tree`, `content_reparent`      | MCP equivalents                              |
+| `content_versions`, `content_version_cut` | MCP version catalog                        |
+
+Create and update accept `parentId`, `nodeKind` (`doc` \| `section`), and `versionSlug`.
+
+## Next steps
+
+- [Querying Content](/guides/querying-content/) — list and entry helpers
+- [Working with Content](/guides/working-with-content/) — admin CRUD
+- [Create a Blog](/guides/create-a-blog/) — a flat collection beside docs

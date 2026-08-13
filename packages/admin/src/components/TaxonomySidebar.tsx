@@ -1,0 +1,572 @@
+/**
+ * Taxonomy Sidebar for Content Editor
+ *
+ * Shows taxonomy selection UI in the content editor sidebar.
+ * - Checkbox tree for hierarchical taxonomies (categories)
+ * - Tag input for flat taxonomies (tags)
+ */
+
+import { Button, Checkbox, Input, Label, Text, Toast } from "@cloudflare/kumo";
+import { i18n } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
+import { Plus, X } from "@phosphor-icons/react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import * as React from "react";
+
+import { apiFetch, parseApiResponse, throwResponseError } from "../lib/api/client.js";
+import { createTerm, withLocale } from "../lib/api/taxonomies.js";
+import { termExactMatches, termMatches } from "../lib/taxonomy-match.js";
+import { cn, slugify } from "../lib/utils.js";
+
+interface TaxonomyTerm {
+	id: string;
+	name: string;
+	slug: string;
+	label: string;
+	parentId?: string;
+	children: TaxonomyTerm[];
+}
+
+interface TaxonomyDef {
+	id: string;
+	name: string;
+	label: string;
+	labelSingular?: string;
+	hierarchical: boolean;
+	collections: string[];
+}
+
+interface TaxonomySidebarProps {
+	collection: string;
+	entryId?: string;
+	/** Locale of the entry being edited. Scopes term reads/writes so only the
+	 * matching translation variants are shown — see issue #1218. */
+	entryLocale?: string;
+	onChange?: (taxonomyName: string, termIds: string[]) => void;
+	/** Applied to the root when the section renders. Omitted when the section
+	 * is empty so the caller doesn't need to guess whether to draw chrome. */
+	className?: string;
+}
+
+const EMPTY_TERMS: TaxonomyTerm[] = [];
+
+/**
+ * Fetch taxonomy definitions
+ */
+async function fetchTaxonomyDefs(): Promise<TaxonomyDef[]> {
+	const res = await apiFetch(`/_emdash/api/taxonomies`);
+	const data = await parseApiResponse<{ taxonomies: TaxonomyDef[] }>(
+		res,
+		"Failed to fetch taxonomies",
+	);
+	return data.taxonomies;
+}
+
+function useApplicableTaxonomies(collection: string): TaxonomyDef[] {
+	const { data: taxonomies = [] } = useQuery({
+		queryKey: ["taxonomy-defs"],
+		queryFn: fetchTaxonomyDefs,
+	});
+	return taxonomies.filter((taxonomy) => taxonomy.collections.includes(collection));
+}
+
+/** Whether the editor should include a taxonomy settings section. */
+export function useHasApplicableTaxonomies(collection: string): boolean {
+	return useApplicableTaxonomies(collection).length > 0;
+}
+
+/**
+ * Fetch terms for a taxonomy, scoped to the entry's locale so only the matching
+ * translation variants are offered. The picker shows no usage counts, so it
+ * opts out of the per-collection count aggregate the endpoint runs by default.
+ */
+async function fetchTerms(taxonomyName: string, locale?: string): Promise<TaxonomyTerm[]> {
+	const res = await apiFetch(
+		withLocale(`/_emdash/api/taxonomies/${taxonomyName}/terms?includeCounts=false`, locale),
+	);
+	const data = await parseApiResponse<{ terms: TaxonomyTerm[] }>(
+		res,
+		i18n._(msg`Failed to fetch terms`),
+	);
+	return data.terms;
+}
+
+/**
+ * Fetch entry terms
+ */
+async function fetchEntryTerms(
+	collection: string,
+	entryId: string,
+	taxonomy: string,
+	locale?: string,
+): Promise<TaxonomyTerm[]> {
+	const res = await apiFetch(
+		withLocale(`/_emdash/api/content/${collection}/${entryId}/terms/${taxonomy}`, locale),
+	);
+	const data = await parseApiResponse<{ terms: TaxonomyTerm[] }>(
+		res,
+		i18n._(msg`Failed to fetch entry terms`),
+	);
+	return data.terms;
+}
+
+/**
+ * Set entry terms
+ */
+async function setEntryTerms(
+	collection: string,
+	entryId: string,
+	taxonomy: string,
+	termIds: string[],
+	locale?: string,
+): Promise<void> {
+	const res = await apiFetch(
+		withLocale(`/_emdash/api/content/${collection}/${entryId}/terms/${taxonomy}`, locale),
+		{
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ termIds }),
+		},
+	);
+	if (!res.ok) await throwResponseError(res, i18n._(msg`Failed to set entry terms`));
+}
+
+/**
+ * Checkbox tree for hierarchical taxonomies
+ */
+function CategoryCheckboxTree({
+	term,
+	level = 0,
+	selectedIds,
+	onToggle,
+}: {
+	term: TaxonomyTerm;
+	level?: number;
+	selectedIds: Set<string>;
+	onToggle: (termId: string) => void;
+}) {
+	const isChecked = selectedIds.has(term.id);
+
+	return (
+		<div>
+			<div
+				className="py-1 hover:bg-kumo-tint/50 rounded px-2"
+				style={{ marginInlineStart: `${level}rem` }}
+			>
+				<Checkbox
+					checked={isChecked}
+					onCheckedChange={() => onToggle(term.id)}
+					label={<span className="text-sm">{term.label}</span>}
+				/>
+			</div>
+			{term.children.map((child) => (
+				<CategoryCheckboxTree
+					key={child.id}
+					term={child}
+					level={level + 1}
+					selectedIds={selectedIds}
+					onToggle={onToggle}
+				/>
+			))}
+		</div>
+	);
+}
+
+/**
+ * Tag input for flat taxonomies
+ */
+function TagInput({
+	terms,
+	selectedIds,
+	onAdd,
+	onRemove,
+	onCreate,
+	isCreating,
+	label,
+}: {
+	terms: TaxonomyTerm[];
+	selectedIds: Set<string>;
+	onAdd: (termId: string) => void;
+	onRemove: (termId: string) => void;
+	onCreate: (label: string) => void;
+	isCreating: boolean;
+	label: string;
+}) {
+	const { t } = useLingui();
+	const [input, setInput] = React.useState("");
+	const [isOpen, setIsOpen] = React.useState(false);
+
+	const selectedTerms = terms.filter((term) => selectedIds.has(term.id));
+
+	const trimmedInput = input.trim();
+
+	const suggestions = React.useMemo(() => {
+		const availableTerms = terms.filter((term) => !selectedIds.has(term.id));
+		if (!trimmedInput) return availableTerms.slice(0, 5);
+		return availableTerms.filter((term) => termMatches(term, trimmedInput)).slice(0, 5);
+	}, [trimmedInput, terms, selectedIds]);
+
+	const hasExactMatch = React.useMemo(() => {
+		if (!trimmedInput) return false;
+		return terms.some((term) => termExactMatches(term, trimmedInput));
+	}, [trimmedInput, terms]);
+
+	const showCreateOption = trimmedInput.length > 0 && !hasExactMatch;
+
+	const handleSelect = (term: TaxonomyTerm) => {
+		onAdd(term.id);
+		setInput("");
+		setIsOpen(false);
+	};
+
+	const handleCreate = () => {
+		if (!trimmedInput || isCreating) return;
+		onCreate(trimmedInput);
+		setInput("");
+		setIsOpen(false);
+	};
+
+	const handleBlur = (e: React.FocusEvent<HTMLDivElement>) => {
+		const nextFocused = e.relatedTarget;
+		if (nextFocused instanceof Node && e.currentTarget.contains(nextFocused)) return;
+		setIsOpen(false);
+	};
+
+	const handleKeyDown = (e: React.KeyboardEvent) => {
+		if (e.key === "Enter") {
+			e.preventDefault();
+			if (suggestions.length === 1 && !showCreateOption) {
+				handleSelect(suggestions[0]!);
+			} else if (showCreateOption && suggestions.length === 0) {
+				handleCreate();
+			}
+		}
+	};
+
+	return (
+		<div className="space-y-2">
+			{/* Selected tags */}
+			{selectedTerms.length > 0 && (
+				<div className="flex flex-wrap gap-2">
+					{selectedTerms.map((term) => (
+						<span
+							key={term.id}
+							className="inline-flex items-center gap-1 px-2 py-1 text-sm bg-kumo-tint rounded-md"
+						>
+							{term.label}
+							<button
+								type="button"
+								onClick={() => onRemove(term.id)}
+								className="hover:text-kumo-danger"
+								aria-label={t`Remove ${term.label}`}
+							>
+								<X className="w-3 h-3" />
+							</button>
+						</span>
+					))}
+				</div>
+			)}
+
+			{/* Input with autocomplete */}
+			<div className="relative" onBlur={handleBlur}>
+				<Input
+					value={input}
+					onChange={(e) => {
+						setInput(e.target.value);
+						setIsOpen(true);
+					}}
+					onFocus={() => setIsOpen(true)}
+					onKeyDown={handleKeyDown}
+					placeholder={t`Add tags...`}
+					aria-label={t`Add ${label}`}
+					className="w-full text-sm"
+				/>
+
+				{isOpen && (suggestions.length > 0 || showCreateOption) && (
+					<div className="absolute top-full start-0 end-0 mt-1 overflow-hidden bg-kumo-overlay border rounded-lg shadow-lg z-10">
+						{suggestions.map((term) => (
+							<button
+								key={term.id}
+								type="button"
+								onMouseDown={(e) => e.preventDefault()}
+								onClick={() => handleSelect(term)}
+								className="w-full text-start px-3 py-2 text-sm hover:bg-kumo-tint"
+							>
+								{term.label}
+							</button>
+						))}
+						{showCreateOption && (
+							<button
+								type="button"
+								onMouseDown={(e) => e.preventDefault()}
+								onClick={handleCreate}
+								disabled={isCreating}
+								className="w-full text-start px-3 py-2 text-sm hover:bg-kumo-tint text-kumo-accent flex items-center gap-1 border-t"
+							>
+								<Plus className="w-3 h-3" />
+								{isCreating ? t`Creating...` : t`Create "${trimmedInput}"`}
+							</button>
+						)}
+					</div>
+				)}
+			</div>
+		</div>
+	);
+}
+
+/**
+ * Single taxonomy section
+ */
+function TaxonomySection({
+	taxonomy,
+	collection,
+	entryId,
+	entryLocale,
+	onChange,
+}: {
+	taxonomy: TaxonomyDef;
+	collection: string;
+	entryId?: string;
+	entryLocale?: string;
+	onChange?: (termIds: string[]) => void;
+}) {
+	const { t } = useLingui();
+	const queryClient = useQueryClient();
+	const toastManager = Toast.useToastManager();
+	const [newCategoryLabel, setNewCategoryLabel] = React.useState("");
+	const [showCategoryInput, setShowCategoryInput] = React.useState(false);
+
+	// The count mode belongs in the key: the Taxonomies settings page reads the
+	// same endpoint with counts and must not be served this count-free list.
+	const { data: terms = EMPTY_TERMS } = useQuery({
+		queryKey: ["taxonomy-terms", taxonomy.name, entryLocale, { includeCounts: false }],
+		queryFn: () => fetchTerms(taxonomy.name, entryLocale),
+	});
+
+	const { data: entryTerms = EMPTY_TERMS } = useQuery({
+		queryKey: ["entry-terms", collection, entryId, taxonomy.name, entryLocale],
+		queryFn: () => {
+			if (!entryId) return [];
+			return fetchEntryTerms(collection, entryId, taxonomy.name, entryLocale);
+		},
+		enabled: !!entryId,
+	});
+
+	const saveMutation = useMutation({
+		mutationFn: (termIds: string[]) => {
+			if (!entryId) throw new Error("No entry ID");
+			return setEntryTerms(collection, entryId, taxonomy.name, termIds, entryLocale);
+		},
+		onSuccess: () => {
+			void queryClient.invalidateQueries({
+				queryKey: ["entry-terms", collection, entryId, taxonomy.name, entryLocale],
+			});
+			toastManager.add({ title: t`${taxonomy.label} updated` });
+		},
+		onError: (error) => {
+			toastManager.add({
+				title: t`Failed to update ${taxonomy.label.toLowerCase()}`,
+				description: error instanceof Error ? error.message : t`An error occurred`,
+				type: "error",
+			});
+		},
+	});
+
+	const createTermMutation = useMutation({
+		mutationFn: (label: string) =>
+			createTerm(taxonomy.name, {
+				slug: slugify(label),
+				label,
+				// Create the term in the entry's locale so it resolves on this entry.
+				...(entryLocale ? { locale: entryLocale } : {}),
+			}),
+		onSuccess: (newTerm) => {
+			void queryClient.invalidateQueries({
+				queryKey: ["taxonomy-terms", taxonomy.name, entryLocale],
+			});
+			// Auto-select the newly created term
+			const newSelected = new Set(selectedIds);
+			newSelected.add(newTerm.id);
+			setSelectedIds(newSelected);
+
+			const termIdsArray = [...newSelected];
+			onChange?.(termIdsArray);
+
+			if (entryId) {
+				saveMutation.mutate(termIdsArray);
+			}
+
+			// Reset category input
+			setNewCategoryLabel("");
+			setShowCategoryInput(false);
+		},
+	});
+
+	const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
+
+	// Sync selected IDs from entry terms
+	React.useEffect(() => {
+		setSelectedIds(new Set(entryTerms.map((term) => term.id)));
+	}, [entryTerms]);
+
+	const handleToggle = (termId: string) => {
+		const newSelected = new Set(selectedIds);
+		if (newSelected.has(termId)) {
+			newSelected.delete(termId);
+		} else {
+			newSelected.add(termId);
+		}
+		setSelectedIds(newSelected);
+
+		// Notify parent of change
+		const termIdsArray = [...newSelected];
+		onChange?.(termIdsArray);
+
+		// Auto-save if entry exists
+		if (entryId) {
+			saveMutation.mutate(termIdsArray);
+		}
+	};
+
+	const handleAdd = (termId: string) => {
+		handleToggle(termId);
+	};
+
+	const handleRemove = (termId: string) => {
+		handleToggle(termId);
+	};
+
+	const handleCreateCategory = () => {
+		const label = newCategoryLabel.trim();
+		if (!label || createTermMutation.isPending) return;
+		createTermMutation.mutate(label);
+	};
+
+	return (
+		<div className="space-y-2">
+			<Label className="text-sm font-medium">{taxonomy.label}</Label>
+
+			{taxonomy.hierarchical ? (
+				<>
+					{terms.length === 0 ? (
+						<p className="text-sm text-kumo-subtle">
+							{t`No ${taxonomy.label.toLowerCase()} available.`}
+						</p>
+					) : (
+						<div className="border rounded-lg p-2 max-h-64 overflow-y-auto">
+							{terms.map((term) => (
+								<CategoryCheckboxTree
+									key={term.id}
+									term={term}
+									selectedIds={selectedIds}
+									onToggle={handleToggle}
+								/>
+							))}
+						</div>
+					)}
+
+					{/* Add new category inline */}
+					{showCategoryInput ? (
+						<div className="flex gap-1">
+							<Input
+								value={newCategoryLabel}
+								onChange={(e) => setNewCategoryLabel(e.target.value)}
+								onKeyDown={(e) => {
+									if (e.key === "Enter") {
+										e.preventDefault();
+										handleCreateCategory();
+									} else if (e.key === "Escape") {
+										setShowCategoryInput(false);
+										setNewCategoryLabel("");
+									}
+								}}
+								placeholder={t`New ${(taxonomy.labelSingular || taxonomy.label).toLowerCase()}`}
+								className="text-sm flex-1"
+								autoFocus
+								disabled={createTermMutation.isPending}
+							/>
+							<Button
+								type="button"
+								onClick={handleCreateCategory}
+								disabled={!newCategoryLabel.trim()}
+								loading={createTermMutation.isPending}
+								variant="primary"
+							>
+								{t`Add`}
+							</Button>
+						</div>
+					) : (
+						<Button
+							type="button"
+							variant="ghost"
+							size="sm"
+							className="-ms-2"
+							onClick={() => setShowCategoryInput(true)}
+							icon={<Plus />}
+						>
+							{t`Add new ${(taxonomy.labelSingular || taxonomy.label).toLowerCase()}`}
+						</Button>
+					)}
+					{createTermMutation.error && (
+						<p className="text-sm text-kumo-danger">
+							{createTermMutation.error instanceof Error
+								? createTermMutation.error.message
+								: t`Failed to create term`}
+						</p>
+					)}
+				</>
+			) : (
+				<TagInput
+					terms={terms}
+					selectedIds={selectedIds}
+					onAdd={handleAdd}
+					onRemove={handleRemove}
+					onCreate={(label) => createTermMutation.mutate(label)}
+					isCreating={createTermMutation.isPending}
+					label={taxonomy.label}
+				/>
+			)}
+		</div>
+	);
+}
+
+/**
+ * Main TaxonomySidebar component
+ */
+export function TaxonomySidebar({
+	collection,
+	entryId,
+	entryLocale,
+	onChange,
+	className,
+}: TaxonomySidebarProps) {
+	const { t } = useLingui();
+	const applicableTaxonomies = useApplicableTaxonomies(collection);
+
+	if (applicableTaxonomies.length === 0) {
+		return null;
+	}
+
+	return (
+		<div className={cn(className)}>
+			<div>
+				<Text bold as="h3" DANGEROUS_className="mb-4">
+					{t`Taxonomies`}
+				</Text>
+				<div className="space-y-4">
+					{applicableTaxonomies.map((taxonomy) => (
+						<TaxonomySection
+							key={taxonomy.name}
+							taxonomy={taxonomy}
+							collection={collection}
+							entryId={entryId}
+							entryLocale={entryLocale}
+							onChange={(termIds) => onChange?.(taxonomy.name, termIds)}
+						/>
+					))}
+				</div>
+			</div>
+		</div>
+	);
+}

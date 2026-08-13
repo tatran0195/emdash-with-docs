@@ -1,0 +1,35 @@
+---
+import { getEmDashTree } from "emdash";
+import Base from "../layouts/Base.astro";
+
+const { tree } = await getEmDashTree("docs");
+---
+
+<Base title="Documentation">
+	<aside>
+		<p class="muted">Docs</p>
+		{tree.map((node) => (
+			<a href={`/docs/${node.path}`}>{node.title}</a>
+		))}
+	</aside>
+	<main>
+		<h1>Documentation</h1>
+		<p>A hierarchical docs collection beside pages and posts. Folders are pages.</p>
+		<ul>
+			{tree.map((node) => (
+				<li>
+					<a href={`/docs/${node.path}`}>{node.title}</a>
+					{node.children.length > 0 && (
+						<ul>
+							{node.children.map((child) => (
+								<li>
+									<a href={`/docs/${child.path}`}>{child.title}</a>
+								</li>
+							))}
+						</ul>
+					)}
+				</li>
+			))}
+		</ul>
+	</main>
+</Base>

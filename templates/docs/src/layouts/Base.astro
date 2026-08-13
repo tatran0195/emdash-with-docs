@@ -1,0 +1,72 @@
+---
+import { getMenu, getSiteSettings } from "emdash";
+import { EmDashHead, EmDashBodyStart, EmDashBodyEnd } from "emdash/ui";
+import { createPublicPageContext } from "emdash/page";
+
+interface Props {
+	title: string;
+	pageTitle?: string | null;
+	description?: string | null;
+	canonical?: string | null;
+	content?: { collection: string; id: string; slug?: string | null };
+}
+
+const { title, pageTitle, description, canonical, content } = Astro.props;
+const settings = await getSiteSettings();
+const siteTitle = settings?.title ?? "Docs";
+const fullTitle = title.includes(siteTitle) ? title : `${title} — ${siteTitle}`;
+const menu = await getMenu("primary");
+
+const pageCtx = createPublicPageContext({
+	Astro,
+	kind: content ? "content" : "custom",
+	pageType: "website",
+	title: fullTitle,
+	pageTitle: pageTitle ?? title,
+	description: description ?? settings?.tagline,
+	canonical,
+	content,
+	siteName: siteTitle,
+});
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>{fullTitle}</title>
+		{description && <meta name="description" content={description} />}
+		{canonical && <link rel="canonical" href={canonical} />}
+		<EmDashHead page={pageCtx} />
+		<style>
+			:root { color-scheme: light dark; --fg: CanvasText; --muted: color-mix(in srgb, CanvasText 60%, Canvas); --line: color-mix(in srgb, CanvasText 12%, Canvas); }
+			body { margin: 0; font-family: ui-sans-serif, system-ui, sans-serif; color: var(--fg); }
+			header { border-bottom: 1px solid var(--line); }
+			nav { display: flex; gap: 1.25rem; align-items: center; max-width: 1100px; margin: 0 auto; padding: 0.9rem 1.25rem; }
+			nav a { color: inherit; text-decoration: none; }
+			.shell { display: grid; grid-template-columns: 240px 1fr; gap: 2rem; max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
+			@media (max-width: 800px) { .shell { grid-template-columns: 1fr; } }
+			aside a { display: block; color: inherit; text-decoration: none; padding: 0.25rem 0; }
+			aside a[aria-current="page"] { font-weight: 600; }
+			.muted { color: var(--muted); }
+			.crumbs { display: flex; flex-wrap: wrap; gap: 0.4rem; font-size: 0.9rem; color: var(--muted); margin-bottom: 1rem; }
+			.nav-row { display: flex; justify-content: space-between; gap: 1rem; margin-top: 2.5rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+		</style>
+	</head>
+	<body>
+		<EmDashBodyStart page={pageCtx} />
+		<header>
+			<nav>
+				<a href="/"><strong>{siteTitle}</strong></a>
+				{menu?.items.map((item) => (
+					<a href={item.url} target={item.target}>{item.label}</a>
+				))}
+			</nav>
+		</header>
+		<div class="shell">
+			<slot />
+		</div>
+		<EmDashBodyEnd page={pageCtx} />
+	</body>
+</html>

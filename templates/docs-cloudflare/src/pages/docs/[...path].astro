@@ -1,0 +1,115 @@
+---
+import {
+	getEmDashEntryByPath,
+	getEmDashTree,
+	getEmDashBreadcrumbs,
+	getEmDashNeighbors,
+	getEmDashVersions,
+	getSeoMeta,
+} from "emdash";
+import { PortableText } from "emdash/ui";
+import Base from "../../layouts/Base.astro";
+
+const raw = Astro.params.path;
+const rawPath = Array.isArray(raw) ? raw.join("/") : (raw ?? "");
+const segments = rawPath.split("/").filter(Boolean);
+
+const { versions } = await getEmDashVersions("docs");
+const known = new Set(versions.map((version) => version.slug));
+const defaultVersion = versions.find((version) => version.isDefault)?.slug ?? "current";
+
+let version = defaultVersion;
+let path = rawPath;
+if (segments.length >= 2 && known.has(segments[0]) && segments[0] !== defaultVersion) {
+	version = segments[0];
+	path = segments.slice(1).join("/");
+}
+
+if (!path) {
+	return Astro.redirect(version !== defaultVersion ? `/docs/${version}` : "/docs/guides");
+}
+
+const prefix = version !== defaultVersion ? `/docs/${version}` : "/docs";
+
+const [{ entry: doc, cacheHint }, { tree }, { crumbs }, { neighbors }] = await Promise.all([
+	getEmDashEntryByPath("docs", path, { version }),
+	getEmDashTree("docs", { version }),
+	getEmDashBreadcrumbs("docs", path, { version }),
+	getEmDashNeighbors("docs", path, { version }),
+]);
+
+if (!doc) {
+	return Astro.redirect("/404");
+}
+
+if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
+
+const seo = getSeoMeta(doc, {
+	siteTitle: "Docs",
+	siteUrl: Astro.url.origin,
+	path: `${prefix}/${path}`,
+});
+
+function hrefFor(docPath: string) {
+	return `${prefix}/${docPath}`;
+}
+---
+
+<Base
+	title={seo.title}
+	pageTitle={seo.ogTitle}
+	description={seo.description}
+	canonical={seo.canonical}
+	content={{ collection: "docs", id: doc.data.id, slug: doc.data.slug }}
+>
+	<aside>
+		<p class="muted">Docs{version !== defaultVersion ? ` · ${version}` : ""}</p>
+		{tree.map((node) => (
+			<div>
+				<a href={hrefFor(node.path)} aria-current={node.path === path ? "page" : undefined}>
+					{node.kind === "section" ? "▸ " : ""}{node.title}
+				</a>
+				{node.children.map((child) => (
+					<a
+						href={hrefFor(child.path)}
+						style="padding-inline-start: 1rem"
+						aria-current={child.path === path ? "page" : undefined}
+					>
+						{child.title}
+					</a>
+				))}
+			</div>
+		))}
+	</aside>
+	<main>
+		<nav class="crumbs" aria-label="Breadcrumb">
+			<a href="/">Home</a>
+			<span>/</span>
+			<a href={prefix}>Docs</a>
+			{crumbs.map((crumb) => (
+				<>
+					<span>/</span>
+					<a href={hrefFor(crumb.path)}>{crumb.title}</a>
+				</>
+			))}
+		</nav>
+
+		<article>
+			<h1 {...doc.edit.title}>{doc.data.title}</h1>
+			<PortableText value={doc.data.content} />
+		</article>
+
+		<div class="nav-row">
+			{neighbors.prev ? (
+				<a href={hrefFor(neighbors.prev.path)}>← {neighbors.prev.title}</a>
+			) : (
+				<span />
+			)}
+			{neighbors.next ? (
+				<a href={hrefFor(neighbors.next.path)}>{neighbors.next.title} →</a>
+			) : (
+				<span />
+			)}
+		</div>
+	</main>
+</Base>

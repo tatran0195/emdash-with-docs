@@ -1,0 +1,301 @@
+---
+import type { ContentVersion, DocCrumb, DocNeighbors, DocTreeNode } from "emdash";
+import DocsBreadcrumbs from "./DocsBreadcrumbs.astro";
+import DocsPager from "./DocsPager.astro";
+import DocsSearch from "./DocsSearch.astro";
+import DocsSidebar from "./DocsSidebar.astro";
+import DocsToc from "./DocsToc.astro";
+import DocsVersionSwitcher from "./DocsVersionSwitcher.astro";
+
+interface Props {
+	tree: DocTreeNode[];
+	versions: ContentVersion[];
+	activeVersion: string;
+	activePath: string;
+	prefix: string;
+	crumbs: DocCrumb[];
+	neighbors: DocNeighbors;
+	kind?: "doc" | "section";
+}
+
+const {
+	tree,
+	versions,
+	activeVersion,
+	activePath,
+	prefix,
+	crumbs,
+	neighbors,
+	kind = "doc",
+} = Astro.props;
+
+const versionMeta = versions.find((version) => version.slug === activeVersion);
+---
+
+<div class="docs-shell" data-docs-shell>
+	<button type="button" class="docs-menu-btn" data-docs-open>
+		<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+			<path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+			></path>
+		</svg>
+		Menu
+	</button>
+
+	<aside class="docs-rail">
+		<DocsSearch />
+		<DocsVersionSwitcher versions={versions} active={activeVersion} currentPath={activePath} />
+		<DocsSidebar tree={tree} activePath={activePath} prefix={prefix} versionLabel={versionMeta?.label} />
+	</aside>
+
+	<div class="docs-main">
+		<DocsBreadcrumbs crumbs={crumbs} prefix={prefix} />
+		{
+			kind === "section" && (
+				<p class="docs-section-badge">
+					Folder
+					<span>This section is a page, not just a sidebar label.</span>
+				</p>
+			)
+		}
+		{
+			versionMeta?.isFrozen && (
+				<p class="docs-frozen-badge">
+					Frozen version
+					<span>{versionMeta.label} is a snapshot. Edit the latest version instead.</span>
+				</p>
+			)
+		}
+		<article class="docs-article">
+			<div class="docs-prose">
+				<slot />
+			</div>
+		</article>
+		<DocsPager neighbors={neighbors} prefix={prefix} />
+	</div>
+
+	<aside class="docs-outline">
+		<div class="docs-outline-sticky">
+			<DocsToc />
+		</div>
+	</aside>
+</div>
+
+<div class="docs-backdrop" data-docs-backdrop hidden></div>
+
+<script>
+	function bindMobileNav() {
+		const shell = document.querySelector("[data-docs-shell]");
+		const openBtn = document.querySelector("[data-docs-open]");
+		const closeBtn = document.querySelector("[data-docs-close]");
+		const backdrop = document.querySelector("[data-docs-backdrop]");
+		if (!shell) return;
+
+		const setOpen = (open: boolean) => {
+			shell.classList.toggle("is-nav-open", open);
+			if (backdrop instanceof HTMLElement) backdrop.hidden = !open;
+			document.body.style.overflow = open ? "hidden" : "";
+		};
+
+		openBtn?.addEventListener("click", () => setOpen(true));
+		closeBtn?.addEventListener("click", () => setOpen(false));
+		backdrop?.addEventListener("click", () => setOpen(false));
+	}
+
+	bindMobileNav();
+	document.addEventListener("astro:page-load", bindMobileNav);
+</script>
+
+<style>
+	.docs-shell {
+		display: grid;
+		grid-template-columns: 260px minmax(0, 1fr) 200px;
+		gap: var(--spacing-8);
+		max-width: var(--wide-width);
+		margin: 0 auto;
+		padding: var(--spacing-8) var(--spacing-6) var(--spacing-16);
+	}
+
+	.docs-menu-btn {
+		display: none;
+		align-items: center;
+		gap: 0.4rem;
+		margin-bottom: var(--spacing-4);
+		padding: 0.4rem 0.7rem;
+		font-family: var(--font-sans);
+		font-size: var(--font-size-sm);
+		color: var(--color-text);
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius);
+		cursor: pointer;
+	}
+
+	.docs-rail {
+		position: sticky;
+		top: calc(var(--nav-height) + var(--spacing-4));
+		align-self: start;
+		max-height: calc(100vh - var(--nav-height) - var(--spacing-8));
+		overflow: auto;
+		padding-inline-end: var(--spacing-2);
+	}
+
+	.docs-main {
+		min-width: 0;
+	}
+
+	.docs-section-badge,
+	.docs-frozen-badge {
+		display: flex;
+		flex-direction: column;
+		gap: 0.15rem;
+		margin: 0 0 var(--spacing-4);
+		padding: 0.65rem 0.85rem;
+		border-radius: var(--radius-lg);
+		font-size: var(--font-size-sm);
+		font-weight: 600;
+	}
+
+	.docs-section-badge span,
+	.docs-frozen-badge span {
+		font-weight: 400;
+		color: var(--color-text-secondary);
+	}
+
+	.docs-section-badge {
+		background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+		border: 1px solid color-mix(in srgb, var(--color-accent) 25%, transparent);
+		color: var(--color-accent);
+	}
+
+	.docs-frozen-badge {
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
+		color: var(--color-text);
+	}
+
+	.docs-article {
+		min-width: 0;
+	}
+
+	.docs-prose :global(h1) {
+		font-size: clamp(1.75rem, 4vw, 2.4rem);
+		letter-spacing: var(--tracking-tight);
+		margin: 0 0 var(--spacing-5);
+	}
+
+	.docs-prose :global(p) {
+		margin-bottom: 1.15em;
+	}
+
+	.docs-prose :global(h2) {
+		font-size: var(--font-size-2xl);
+		margin-top: 2em;
+		margin-bottom: 0.6em;
+		scroll-margin-top: calc(var(--nav-height) + var(--spacing-4));
+	}
+
+	.docs-prose :global(h3) {
+		font-size: var(--font-size-xl);
+		margin-top: 1.6em;
+		margin-bottom: 0.45em;
+		scroll-margin-top: calc(var(--nav-height) + var(--spacing-4));
+	}
+
+	.docs-prose :global(ul),
+	.docs-prose :global(ol) {
+		margin: 0 0 1.15em;
+		padding-inline-start: 1.3em;
+	}
+
+	.docs-prose :global(li) {
+		margin-bottom: 0.35em;
+	}
+
+	.docs-prose :global(pre) {
+		margin: 1.5em 0;
+		padding: var(--spacing-4);
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+		overflow-x: auto;
+		font-family: var(--font-mono);
+		font-size: var(--font-size-sm);
+	}
+
+	.docs-prose :global(code) {
+		font-family: var(--font-mono);
+		font-size: 0.9em;
+		background: var(--color-surface);
+		padding: 0.15em 0.35em;
+		border-radius: var(--radius);
+	}
+
+	.docs-prose :global(pre code) {
+		background: none;
+		padding: 0;
+	}
+
+	.docs-prose :global(a) {
+		text-decoration: underline;
+		text-underline-offset: 3px;
+	}
+
+	.docs-outline {
+		display: block;
+	}
+
+	.docs-outline-sticky {
+		position: sticky;
+		top: calc(var(--nav-height) + var(--spacing-4));
+	}
+
+	.docs-backdrop {
+		display: none;
+	}
+
+	@media (max-width: 1100px) {
+		.docs-shell {
+			grid-template-columns: 240px minmax(0, 1fr);
+		}
+
+		.docs-outline {
+			display: none;
+		}
+	}
+
+	@media (max-width: 900px) {
+		.docs-shell {
+			grid-template-columns: 1fr;
+			padding: var(--spacing-5) var(--spacing-4) var(--spacing-12);
+		}
+
+		.docs-menu-btn {
+			display: inline-flex;
+		}
+
+		.docs-rail {
+			position: fixed;
+			inset: 0 auto 0 0;
+			z-index: 120;
+			width: min(86vw, 320px);
+			max-height: none;
+			padding: var(--spacing-5);
+			background: var(--color-bg);
+			border-right: 1px solid var(--color-border);
+			transform: translateX(-105%);
+			transition: transform var(--transition-base);
+		}
+
+		.docs-shell.is-nav-open .docs-rail {
+			transform: translateX(0);
+		}
+
+		.docs-backdrop {
+			display: block;
+			position: fixed;
+			inset: 0;
+			z-index: 110;
+			background: color-mix(in srgb, #000 40%, transparent);
+		}
+	}
+</style>
