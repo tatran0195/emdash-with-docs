@@ -261,3 +261,130 @@ export function dropPositionFromOffset(offsetRatio: number): DropPosition {
 	if (offsetRatio > 0.72) return "after";
 	return "inside";
 }
+
+export const TREE_INDENT_PX = 20;
+
+export interface TreeProjection {
+	depth: number;
+	parentId: string | null;
+	parentNodeId: string | null;
+	overId: string;
+}
+
+export function arrayMove<T>(items: readonly T[], from: number, to: number): T[] {
+	const next = items.slice();
+	const [item] = next.splice(from, 1);
+	if (item === undefined) return next;
+	next.splice(to, 0, item);
+	return next;
+}
+
+/**
+ * dnd-kit tree projection: vertical over-id reorders the flat list, horizontal
+ * offset changes depth (indent / outdent). Matches the official sortable-tree
+ * example so rows make space like a real list while still nesting.
+ */
+export function getProjection(
+	flat: readonly FlatTreeNode[],
+	activeId: string,
+	overId: string,
+	dragOffsetX: number,
+	indentationWidth: number = TREE_INDENT_PX,
+): TreeProjection | null {
+	const activeIndex = flat.findIndex((row) => row.id === activeId);
+	const overIndex = flat.findIndex((row) => row.id === overId);
+	const active = flat[activeIndex];
+	const over = flat[overIndex];
+	if (!active || !over || activeIndex < 0 || overIndex < 0) return null;
+	if (active.node.stranded || over.node.stranded) return null;
+	if (over.ancestorIds.has(activeId)) return null;
+
+	const moved = arrayMove(flat, activeIndex, overIndex);
+	const previous = moved[overIndex - 1];
+	const next = moved[overIndex + 1];
+	const maxDepth = previous ? previous.depth + 1 : 0;
+	const minDepth = next ? next.depth : 0;
+	const projected = active.depth + Math.round(dragOffsetX / indentationWidth);
+	const depth = Math.min(maxDepth, Math.max(minDepth, projected, 0));
+
+	const parent = resolveProjectedParent(moved, overIndex, depth, activeId);
+	if (parent.parentNodeId === activeId) return null;
+	if (parent.parentNodeId) {
+		const parentRow = flat.find((row) => row.id === parent.parentNodeId);
+		if (parentRow?.ancestorIds.has(activeId)) return null;
+	}
+
+	return {
+		depth,
+		parentId: parent.parentId,
+		parentNodeId: parent.parentNodeId,
+		overId,
+	};
+}
+
+function resolveProjectedParent(
+	moved: readonly FlatTreeNode[],
+	overIndex: number,
+	depth: number,
+	activeId: string,
+): { parentId: string | null; parentNodeId: string | null } {
+	if (depth <= 0) return { parentId: null, parentNodeId: null };
+	for (let index = overIndex - 1; index >= 0; index--) {
+		const item = moved[index];
+		if (!item || item.id === activeId) continue;
+		if (item.depth === depth - 1) {
+			return { parentId: item.node.translationGroup, parentNodeId: item.id };
+		}
+	}
+	return { parentId: null, parentNodeId: null };
+}
+
+/** Turn a live projection into the reparent + sibling-order payload. */
+export function planMoveFromProjection(
+	flat: readonly FlatTreeNode[],
+	activeId: string,
+	projection: TreeProjection,
+): TreeMove | null {
+	const active = flat.find((row) => row.id === activeId);
+	if (!active || active.node.stranded) return null;
+
+	const activeIndex = flat.findIndex((row) => row.id === activeId);
+	const overIndex = flat.findIndex((row) => row.id === projection.overId);
+	if (activeIndex < 0 || overIndex < 0) return null;
+
+	const moved = arrayMove(flat, activeIndex, overIndex);
+	const depthOf = (row: FlatTreeNode) => (row.id === activeId ? projection.depth : row.depth);
+
+	const toSiblingIds: string[] = [];
+	if (projection.parentId === null) {
+		for (const row of moved) {
+			if (depthOf(row) === 0) toSiblingIds.push(row.id);
+		}
+	} else {
+		const parentIndex = moved.findIndex((row) => row.id === projection.parentNodeId);
+		if (parentIndex < 0) return null;
+		const parentDepth = depthOf(moved[parentIndex]!);
+		for (let index = parentIndex + 1; index < moved.length; index++) {
+			const row = moved[index]!;
+			const depth = depthOf(row);
+			if (depth <= parentDepth) break;
+			if (depth === projection.depth) toSiblingIds.push(row.id);
+		}
+	}
+
+	if (!toSiblingIds.includes(activeId)) toSiblingIds.push(activeId);
+
+	const sameParent = active.parentId === projection.parentId;
+	const sameOrder =
+		sameParent &&
+		active.siblingIds.length === toSiblingIds.length &&
+		active.siblingIds.every((id, index) => id === toSiblingIds[index]);
+	if (sameOrder) return null;
+
+	return {
+		id: activeId,
+		fromParentId: active.parentId,
+		toParentId: projection.parentId,
+		toSiblingIds,
+	};
+}

@@ -3,12 +3,16 @@ import { describe, expect, it } from "vitest";
 import type { DocTreeNode } from "../lib/api";
 import {
 	applyTreeMove,
+	arrayMove,
 	countTreeNodes,
 	flattenVisible,
+	getProjection,
 	planIndent,
+	planMoveFromProjection,
 	planOutdent,
 	planReorder,
 	planTreeMove,
+	TREE_INDENT_PX,
 } from "./content-tree-ops.js";
 
 function node(
@@ -82,5 +86,52 @@ describe("content-tree-ops", () => {
 		const flat = flattenVisible(sample, new Set());
 		const move = planReorder(flat, "api", -1);
 		expect(move?.toSiblingIds).toEqual(["api", "guides", "faq"]);
+	});
+
+	it("arrayMove inserts without mutating", () => {
+		const input = ["a", "b", "c"];
+		expect(arrayMove(input, 0, 2)).toEqual(["b", "c", "a"]);
+		expect(input).toEqual(["a", "b", "c"]);
+	});
+
+	it("projects a right-drag as nest under the previous sibling", () => {
+		const flat = flattenVisible(sample, new Set());
+		const projection = getProjection(flat, "api", "api", TREE_INDENT_PX);
+		expect(projection?.depth).toBe(1);
+		expect(projection?.parentId).toBe("tg-guides");
+		const move = planMoveFromProjection(flat, "api", projection!);
+		expect(move?.toParentId).toBe("tg-guides");
+		expect(move?.toSiblingIds).toContain("api");
+	});
+
+	it("projects a left-drag on the last child as an outdent", () => {
+		const flat = flattenVisible(sample, new Set(["guides"]));
+		const projection = getProjection(flat, "install", "install", -TREE_INDENT_PX);
+		expect(projection?.depth).toBe(0);
+		expect(projection?.parentId).toBeNull();
+		const move = planMoveFromProjection(flat, "install", projection!);
+		expect(move?.toParentId).toBeNull();
+		expect(move?.toSiblingIds).toEqual(["guides", "install", "api", "faq"]);
+	});
+
+	it("keeps a middle child nested when the next sibling is still indented", () => {
+		const flat = flattenVisible(sample, new Set(["guides"]));
+		const projection = getProjection(flat, "intro", "intro", -TREE_INDENT_PX);
+		expect(projection?.depth).toBe(1);
+		expect(planMoveFromProjection(flat, "intro", projection!)).toBeNull();
+	});
+
+	it("projects a vertical drag as a same-level reorder", () => {
+		const flat = flattenVisible(sample, new Set());
+		const projection = getProjection(flat, "faq", "guides", 0);
+		expect(projection?.depth).toBe(0);
+		const move = planMoveFromProjection(flat, "faq", projection!);
+		expect(move?.toParentId).toBeNull();
+		expect(move?.toSiblingIds[0]).toBe("faq");
+	});
+
+	it("refuses to project a section into its own descendant", () => {
+		const flat = flattenVisible(sample, new Set(["guides"]));
+		expect(getProjection(flat, "guides", "intro", TREE_INDENT_PX)).toBeNull();
 	});
 });

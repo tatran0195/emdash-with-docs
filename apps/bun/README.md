@@ -17,14 +17,17 @@ It keeps the blog UI (posts, pages, tags, RSS) and adds a Docusaurus-style **doc
 
 ## Setup
 
-From the monorepo root:
+From the monorepo root (installs Node 22 / pnpm if needed, then the demo-bun graph):
 
 ```bash
-pnpm install
-pnpm dev
+./start.sh              # dev  — also: pnpm start
+./start.sh prod         # production build + node dist/server/entry.mjs
+./start.sh check        # boot dev and smoke-test admin / versions / docs
 ```
 
-`pnpm dev` is `turbo run dev --filter=@emdash-cms/demo-bun`. Turbo builds workspace packages, then `scripts/dev-apps-bun.mjs` starts Astro:
+On Windows: `start.cmd`, `start.cmd prod`, or `node scripts/start.mjs`.
+
+`pnpm dev` still works: it is `turbo run dev --filter=@emdash-cms/demo-bun`. Turbo builds workspace packages, then `scripts/dev-apps-bun.mjs` starts Astro:
 
 | Process | SQLite driver |
 | --- | --- |
@@ -47,8 +50,10 @@ EmDash runs migrations and applies `seed/seed.json` on first request. No manual 
 ## Production-style run
 
 ```bash
-pnpm turbo run build --filter=@emdash-cms/demo-bun
-node apps/bun/dist/server/entry.mjs
+./start.sh prod
+# same as:
+#   pnpm turbo run build --filter=@emdash-cms/demo-bun...
+#   HOST=0.0.0.0 PORT=4321 node apps/bun/dist/server/entry.mjs
 ```
 
 ## Docs UI components

@@ -2,13 +2,21 @@ import { Badge, Button, Dialog, DropdownMenu, Input, Loader, Select, Tabs } from
 import {
 	DndContext,
 	DragOverlay,
+	KeyboardSensor,
 	PointerSensor,
 	closestCenter,
+	defaultDropAnimationSideEffects,
 	useSensor,
 	useSensors,
 } from "@dnd-kit/core";
-import type { DragEndEvent, DragMoveEvent, DragStartEvent } from "@dnd-kit/core";
-import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import type { DragEndEvent, DragMoveEvent, DragOverEvent, DragStartEvent } from "@dnd-kit/core";
+import type { DropAnimation } from "@dnd-kit/core";
+import {
+	SortableContext,
+	sortableKeyboardCoordinates,
+	useSortable,
+	verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useLingui } from "@lingui/react/macro";
 import {
@@ -35,25 +43,27 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
 
 import type { ContentVersion, DocTreeNode, TrashedContentItem } from "../lib/api";
+import { getLocaleDir } from "../locales/config.js";
 import { cn } from "../lib/utils";
 import { contentUrl } from "../lib/url.js";
 import { ContentStatusBadge, isContentStatusState } from "./ContentStatusBadge.js";
 import { LocaleSwitcher } from "./LocaleSwitcher";
 import { RouterLinkButton } from "./RouterLinkButton.js";
 import {
-	type DropPosition,
 	type FlatTreeNode,
 	type TreeMove,
+	type TreeProjection,
+	TREE_INDENT_PX,
 	applyTreeMove,
 	collectMatchAncestorIds,
 	countTreeNodes,
-	dropPositionFromOffset,
 	filterTree,
 	flattenVisible,
+	getProjection,
 	planIndent,
+	planMoveFromProjection,
 	planOutdent,
 	planReorder,
-	planTreeMove,
 } from "./content-tree-ops.js";
 
 export interface ContentTreeProps {
@@ -90,6 +100,16 @@ type ViewTab = "all" | "trash";
 
 const EXPAND_ALL_THRESHOLD = 80;
 const ROW_INTRINSIC = "2.75rem";
+
+const dropAnimation: DropAnimation = {
+	sideEffects: defaultDropAnimationSideEffects({
+		styles: { active: { opacity: "0.4" } },
+	}),
+};
+
+function menuIcon(icon: React.ReactNode) {
+	return <span className="me-2 inline-flex h-4 w-4 flex-none items-center justify-center">{icon}</span>;
+}
 
 /**
  * Hierarchical content tree for collections with `supports: ["hierarchical"]`.
@@ -532,15 +552,14 @@ function DocsTreeList({
 	onCommitMove?: (move: TreeMove) => void;
 	frozen?: boolean;
 }) {
-	const { t } = useLingui();
+	const { t, i18n } = useLingui();
 	const [draggingId, setDraggingId] = React.useState<string | null>(null);
-	const [dropIntent, setDropIntent] = React.useState<{
-		overId: string;
-		position: DropPosition;
-	} | null>(null);
+	const [overId, setOverId] = React.useState<string | null>(null);
+	const [offsetX, setOffsetX] = React.useState(0);
 
 	const sensors = useSensors(
-		useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+		useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+		useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
 	);
 
 	const flat = React.useMemo(
@@ -549,44 +568,48 @@ function DocsTreeList({
 	);
 	const ids = React.useMemo(() => flat.map((row) => row.id), [flat]);
 	const dragging = flat.find((row) => row.id === draggingId) ?? null;
+	const rtl = i18n.locale ? getLocaleDir(i18n.locale) === "rtl" : false;
+
+	const projection: TreeProjection | null = React.useMemo(() => {
+		if (!draggingId || !overId) return null;
+		return getProjection(flat, draggingId, overId, rtl ? -offsetX : offsetX, TREE_INDENT_PX);
+	}, [draggingId, overId, flat, offsetX, rtl]);
+
+	const resetDrag = () => {
+		setDraggingId(null);
+		setOverId(null);
+		setOffsetX(0);
+	};
 
 	const onDragStart = (event: DragStartEvent) => {
 		setDraggingId(String(event.active.id));
+		setOverId(String(event.active.id));
+		setOffsetX(0);
 	};
 
 	const onDragMove = (event: DragMoveEvent) => {
-		const { active, over } = event;
-		if (!over) {
-			setDropIntent(null);
-			return;
-		}
-		const overId = String(over.id);
-		const activeId = String(active.id);
-		const rect = over.rect;
-		const translated = active.rect.current.translated;
-		const pointerY = translated ? translated.top + translated.height / 2 : rect.top;
-		const ratio = rect.height > 0 ? (pointerY - rect.top) / rect.height : 0.5;
-		const position = overId === activeId ? "after" : dropPositionFromOffset(ratio);
-		setDropIntent({ overId, position });
+		setOffsetX(event.delta.x);
+	};
+
+	const onDragOver = (event: DragOverEvent) => {
+		setOverId(event.over ? String(event.over.id) : null);
 	};
 
 	const onDragEnd = (event: DragEndEvent) => {
 		const activeId = String(event.active.id);
-		const overId = dropIntent?.overId ?? (event.over ? String(event.over.id) : null);
-		const position = dropIntent?.position ?? "after";
-		setDraggingId(null);
-		setDropIntent(null);
-		if (!overId || !onCommitMove) return;
-		const move = planTreeMove(flat, activeId, overId, position);
-		if (move) {
-			if (position === "inside") onToggle(overId);
-			onCommitMove(move);
+		const currentOver = event.over ? String(event.over.id) : overId;
+		const nextProjection =
+			currentOver && draggingId
+				? getProjection(flat, activeId, currentOver, rtl ? -offsetX : offsetX, TREE_INDENT_PX)
+				: projection;
+		resetDrag();
+		if (!currentOver || !onCommitMove || !nextProjection) return;
+		const move = planMoveFromProjection(flat, activeId, nextProjection);
+		if (!move) return;
+		if (nextProjection.parentNodeId && !expanded.has(nextProjection.parentNodeId)) {
+			onToggle(nextProjection.parentNodeId);
 		}
-	};
-
-	const onDragCancel = () => {
-		setDraggingId(null);
-		setDropIntent(null);
+		onCommitMove(move);
 	};
 
 	return (
@@ -595,8 +618,9 @@ function DocsTreeList({
 			collisionDetection={closestCenter}
 			onDragStart={onDragStart}
 			onDragMove={onDragMove}
+			onDragOver={onDragOver}
 			onDragEnd={onDragEnd}
-			onDragCancel={onDragCancel}
+			onDragCancel={resetDrag}
 		>
 			<SortableContext items={ids} strategy={verticalListSortingStrategy}>
 				<div role="tree" aria-label={t`Docs tree`} className="min-w-[28rem]">
@@ -614,15 +638,23 @@ function DocsTreeList({
 							onDuplicate={onDuplicate}
 							onCommitMove={onCommitMove}
 							flat={flat}
-							dropIntent={dropIntent?.overId === row.id ? dropIntent.position : null}
+							projectedDepth={
+								projection && draggingId === row.id ? projection.depth : undefined
+							}
+							nestTarget={projection?.parentNodeId === row.id}
 							frozen={frozen}
 						/>
 					))}
 				</div>
 			</SortableContext>
-			<DragOverlay dropAnimation={null}>
+			<DragOverlay dropAnimation={dropAnimation}>
 				{dragging ? (
-					<div className="flex items-center gap-2 rounded-md border bg-kumo-base px-3 py-1.5 text-sm shadow-md">
+					<div
+						className="flex items-center gap-2 rounded-md border bg-kumo-base px-3 py-2 text-sm shadow-lg ring-1 ring-kumo-line"
+						style={{
+							marginInlineStart: `${(projection?.depth ?? dragging.depth) * 1.1}rem`,
+						}}
+					>
 						{dragging.node.kind === "section" ? (
 							<Folder className="h-4 w-4 text-kumo-subtle" />
 						) : (
@@ -648,7 +680,8 @@ function TreeRow({
 	onDuplicate,
 	onCommitMove,
 	flat,
-	dropIntent,
+	projectedDepth,
+	nestTarget,
 	frozen,
 }: {
 	row: FlatTreeNode;
@@ -662,7 +695,8 @@ function TreeRow({
 	onDuplicate?: (id: string) => void;
 	onCommitMove?: (move: TreeMove) => void;
 	flat: readonly FlatTreeNode[];
-	dropIntent: DropPosition | null;
+	projectedDepth?: number;
+	nestTarget?: boolean;
 	frozen?: boolean;
 }) {
 	const { t } = useLingui();
@@ -682,11 +716,12 @@ function TreeRow({
 	} = useSortable({ id: node.id, disabled: !onCommitMove || node.stranded });
 
 	const style: React.CSSProperties = {
-		transform: CSS.Transform.toString(transform),
+		transform: CSS.Translate.toString(transform),
 		transition,
 		contentVisibility: "auto",
 		containIntrinsicSize: ROW_INTRINSIC,
 	};
+	const displayDepth = projectedDepth ?? row.depth;
 
 	const indent = planIndent(flat, node.id);
 	const outdent = planOutdent(flat, node.id);
@@ -713,23 +748,16 @@ function TreeRow({
 			role="treeitem"
 			aria-expanded={canExpand ? expanded : undefined}
 			aria-level={row.depth + 1}
-			className={cn(
-				"relative flex items-center gap-1 border-b border-kumo-line/60 px-2 py-1.5 hover:bg-kumo-tint/50",
-				isDragging && "opacity-40",
-				dropIntent === "inside" && "bg-kumo-tint ring-1 ring-inset ring-kumo-link/40",
-			)}
+		className={cn(
+			"relative flex items-center gap-1 border-b border-kumo-line/60 px-2 py-1.5 hover:bg-kumo-tint/50",
+			isDragging && "z-10 opacity-40 shadow-sm",
+			nestTarget && "bg-kumo-tint ring-1 ring-inset ring-kumo-link/40",
+		)}
+	>
+		<div
+			style={{ marginInlineStart: `${displayDepth * 1.1}rem` }}
+			className="flex min-w-0 flex-1 items-center gap-1"
 		>
-			{dropIntent === "before" && (
-				<div className="pointer-events-none absolute inset-x-2 top-0 h-0.5 bg-kumo-link" />
-			)}
-			{dropIntent === "after" && (
-				<div className="pointer-events-none absolute inset-x-2 bottom-0 h-0.5 bg-kumo-link" />
-			)}
-
-			<div
-				style={{ marginInlineStart: `${row.depth * 1.1}rem` }}
-				className="flex min-w-0 flex-1 items-center gap-1"
-			>
 				{onCommitMove && !node.stranded ? (
 					<button
 						type="button"
@@ -809,28 +837,28 @@ function TreeRow({
 						<>
 							<DropdownMenu.Item
 								disabled={!moveUp}
-								icon={<CaretUp className="h-4 w-4" />}
+								icon={menuIcon(<CaretUp className="h-4 w-4" aria-hidden="true" />)}
 								onClick={() => moveUp && onCommitMove(moveUp)}
 							>
 								{t`Move above`}
 							</DropdownMenu.Item>
 							<DropdownMenu.Item
 								disabled={!moveDown}
-								icon={<CaretDown className="h-4 w-4" />}
+								icon={menuIcon(<CaretDown className="h-4 w-4" aria-hidden="true" />)}
 								onClick={() => moveDown && onCommitMove(moveDown)}
 							>
 								{t`Move below`}
 							</DropdownMenu.Item>
 							<DropdownMenu.Item
 								disabled={!indent}
-								icon={<ArrowLineRight className="h-4 w-4" />}
+								icon={menuIcon(<ArrowLineRight className="h-4 w-4" aria-hidden="true" />)}
 								onClick={() => indent && onCommitMove(indent)}
 							>
 								{t`Nest under previous`}
 							</DropdownMenu.Item>
 							<DropdownMenu.Item
 								disabled={!outdent}
-								icon={<ArrowLineLeft className="h-4 w-4" />}
+								icon={menuIcon(<ArrowLineLeft className="h-4 w-4" aria-hidden="true" />)}
 								onClick={() => outdent && onCommitMove(outdent)}
 							>
 								{t`Move out`}
@@ -840,11 +868,14 @@ function TreeRow({
 					)}
 					{!frozen && (
 						<>
-							<DropdownMenu.Item icon={<FilePlus className="h-4 w-4" />} onClick={() => goNew("doc")}>
+							<DropdownMenu.Item
+								icon={menuIcon(<FilePlus className="h-4 w-4" aria-hidden="true" />)}
+								onClick={() => goNew("doc")}
+							>
 								{t`Add page inside`}
 							</DropdownMenu.Item>
 							<DropdownMenu.Item
-								icon={<FolderPlus className="h-4 w-4" />}
+								icon={menuIcon(<FolderPlus className="h-4 w-4" aria-hidden="true" />)}
 								onClick={() => goNew("section")}
 							>
 								{t`Add section inside`}
@@ -853,7 +884,7 @@ function TreeRow({
 						</>
 					)}
 					<DropdownMenu.Item
-						icon={<Pencil className="h-4 w-4" />}
+						icon={menuIcon(<Pencil className="h-4 w-4" aria-hidden="true" />)}
 						onClick={() =>
 							void navigate({
 								to: "/content/$collection/$id",
@@ -866,7 +897,7 @@ function TreeRow({
 					</DropdownMenu.Item>
 					{node.status === "published" && (
 						<DropdownMenu.Item
-							icon={<ArrowSquareOut className="h-4 w-4" />}
+							icon={menuIcon(<ArrowSquareOut className="h-4 w-4" aria-hidden="true" />)}
 							onClick={() => {
 								const href = contentUrl(collection, node.slug, urlPattern, node.path);
 								if (href) window.open(href, "_blank", "noopener,noreferrer");
@@ -876,7 +907,7 @@ function TreeRow({
 						</DropdownMenu.Item>
 					)}
 					<DropdownMenu.Item
-						icon={<Copy className="h-4 w-4" />}
+						icon={menuIcon(<Copy className="h-4 w-4" aria-hidden="true" />)}
 						onClick={() => onDuplicate?.(node.id)}
 					>
 						{t`Duplicate`}
@@ -902,7 +933,7 @@ function TrashMenuItem({
 		<>
 			<DropdownMenu.Item
 				variant="danger"
-				icon={<Trash className="h-4 w-4" />}
+				icon={menuIcon(<Trash className="h-4 w-4" aria-hidden="true" />)}
 				onClick={() => setOpen(true)}
 			>
 				{t`Move to trash`}
