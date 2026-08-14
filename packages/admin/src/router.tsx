@@ -328,15 +328,11 @@ const contentListRoute = createRoute({
 	}),
 });
 
-function isHierarchicalCollection(
-	collectionConfig: { supports: string[] } | undefined,
-): boolean {
+function isHierarchicalCollection(collectionConfig: { supports: string[] } | undefined): boolean {
 	return !!collectionConfig?.supports.includes("hierarchical");
 }
 
-function isVersionedCollection(
-	collectionConfig: { supports: string[] } | undefined,
-): boolean {
+function isVersionedCollection(collectionConfig: { supports: string[] } | undefined): boolean {
 	return !!collectionConfig?.supports.includes("versioned");
 }
 
@@ -422,8 +418,7 @@ function ContentListPage() {
 		error: treeError,
 	} = useQuery({
 		queryKey: ["content", collection, "tree", { locale: activeLocale, version: activeVersion }],
-		queryFn: () =>
-			fetchContentTree(collection, { locale: activeLocale, version: activeVersion }),
+		queryFn: () => fetchContentTree(collection, { locale: activeLocale, version: activeVersion }),
 		enabled: !!manifest && hierarchical,
 	});
 
@@ -728,26 +723,26 @@ function ContentListPage() {
 				onRestore={(id) => restoreMutation.mutate(id)}
 				onPermanentDelete={(id) => permanentDeleteMutation.mutate(id)}
 				onDuplicate={(id) => duplicateMutation.mutate(id)}
-			onReorder={(parentId, ids) => reorderMutation.mutate({ parentId, ids })}
-			onMove={(move) => moveMutation.mutate(move)}
-			i18n={i18n}
-			activeLocale={activeLocale}
-			onLocaleChange={handleLocaleChange}
-			urlPattern={collectionConfig.urlPattern}
-			versioned={versioned}
-			versions={versions}
-			activeVersion={activeVersion}
-			onVersionChange={setActiveVersion}
-			onCutVersion={(input) => cutVersionMutation.mutate(input)}
-			frozen={frozen}
-		/>
+				onReorder={(parentId, ids) => reorderMutation.mutate({ parentId, ids })}
+				onMove={(move) => moveMutation.mutate(move)}
+				i18n={i18n}
+				activeLocale={activeLocale}
+				onLocaleChange={handleLocaleChange}
+				urlPattern={collectionConfig.urlPattern}
+				versioned={versioned}
+				versions={versions}
+				activeVersion={activeVersion}
+				onVersionChange={setActiveVersion}
+				onCutVersion={(input) => cutVersionMutation.mutate(input)}
+				frozen={frozen}
+			/>
 		);
 	}
 
-		return (
-			<ContentList
-				collection={collection}
-				collectionLabel={collectionConfig.label}
+	return (
+		<ContentList
+			collection={collection}
+			collectionLabel={collectionConfig.label}
 			items={items}
 			listColumns={listColumns}
 			trashedItems={trashedData?.items || []}
@@ -791,14 +786,20 @@ const contentNewRoute = createRoute({
 	validateSearch: (search: Record<string, unknown>) => ({
 		locale: typeof search.locale === "string" ? search.locale : undefined,
 		parentId: typeof search.parentId === "string" ? search.parentId : undefined,
-		nodeKind: search.nodeKind === "section" || search.nodeKind === "doc" ? search.nodeKind : undefined,
+		nodeKind:
+			search.nodeKind === "section" || search.nodeKind === "doc" ? search.nodeKind : undefined,
 		version: typeof search.version === "string" ? search.version : undefined,
 	}),
 });
 
 function ContentNewPage() {
 	const { collection } = useParams({ from: "/_admin/content/$collection/new" });
-	const { locale, parentId: parentParam, nodeKind: kindParam, version: versionParam } = useSearch({
+	const {
+		locale,
+		parentId: parentParam,
+		nodeKind: kindParam,
+		version: versionParam,
+	} = useSearch({
 		from: "/_admin/content/$collection/new",
 	});
 	const navigate = useNavigate();

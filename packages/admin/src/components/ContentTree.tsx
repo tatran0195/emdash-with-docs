@@ -43,12 +43,9 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
 
 import type { ContentVersion, DocTreeNode, TrashedContentItem } from "../lib/api";
-import { getLocaleDir } from "../locales/config.js";
-import { cn } from "../lib/utils";
 import { contentUrl } from "../lib/url.js";
-import { ContentStatusBadge, isContentStatusState } from "./ContentStatusBadge.js";
-import { LocaleSwitcher } from "./LocaleSwitcher";
-import { RouterLinkButton } from "./RouterLinkButton.js";
+import { cn } from "../lib/utils";
+import { getLocaleDir } from "../locales/config.js";
 import {
 	type FlatTreeNode,
 	type TreeMove,
@@ -65,6 +62,9 @@ import {
 	planOutdent,
 	planReorder,
 } from "./content-tree-ops.js";
+import { ContentStatusBadge, isContentStatusState } from "./ContentStatusBadge.js";
+import { LocaleSwitcher } from "./LocaleSwitcher";
+import { RouterLinkButton } from "./RouterLinkButton.js";
 
 export interface ContentTreeProps {
 	collection: string;
@@ -108,7 +108,9 @@ const dropAnimation: DropAnimation = {
 };
 
 function menuIcon(icon: React.ReactNode) {
-	return <span className="me-2 inline-flex h-4 w-4 flex-none items-center justify-center">{icon}</span>;
+	return (
+		<span className="me-2 inline-flex h-4 w-4 flex-none items-center justify-center">{icon}</span>
+	);
 }
 
 /**
@@ -191,9 +193,7 @@ export function ContentTree({
 	const versionItems = React.useMemo(() => {
 		const items: Record<string, string> = {};
 		for (const version of versions) {
-			items[version.slug] = version.isDefault
-				? `${version.label} (${t`default`})`
-				: version.label;
+			items[version.slug] = version.isDefault ? `${version.label} (${t`default`})` : version.label;
 		}
 		if (Object.keys(items).length === 0) items.current = t`Current`;
 		return items;
@@ -227,7 +227,7 @@ export function ContentTree({
 
 	const commitMove = React.useCallback(
 		(move: TreeMove) => {
-		setOptimisticTree((current) => applyTreeMove(current ?? liveTree, move));
+			setOptimisticTree((current) => applyTreeMove(current ?? liveTree, move));
 			if (onMove) {
 				onMove(move);
 				return;
@@ -286,9 +286,7 @@ export function ContentTree({
 						</Select>
 					)}
 					{totalNodes > 0 && (
-						<span className="text-xs text-kumo-subtle tabular-nums">
-							{t`${totalNodes} items`}
-						</span>
+						<span className="text-xs text-kumo-subtle tabular-nums">{t`${totalNodes} items`}</span>
 					)}
 				</div>
 				<div className="flex items-center gap-2">
@@ -638,9 +636,7 @@ function DocsTreeList({
 							onDuplicate={onDuplicate}
 							onCommitMove={onCommitMove}
 							flat={flat}
-							projectedDepth={
-								projection && draggingId === row.id ? projection.depth : undefined
-							}
+							projectedDepth={projection && draggingId === row.id ? projection.depth : undefined}
 							nestTarget={projection?.parentNodeId === row.id}
 							frozen={frozen}
 						/>
@@ -706,14 +702,10 @@ function TreeRow({
 	const statusState = isContentStatusState(node.status) ? node.status : undefined;
 	const childCount = node.children.length;
 	const canExpand = childCount > 0;
-	const {
-		attributes,
-		listeners,
-		setNodeRef,
-		transform,
-		transition,
-		isDragging,
-	} = useSortable({ id: node.id, disabled: !onCommitMove || node.stranded });
+	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+		id: node.id,
+		disabled: !onCommitMove || node.stranded,
+	});
 
 	const style: React.CSSProperties = {
 		transform: CSS.Translate.toString(transform),
@@ -748,16 +740,16 @@ function TreeRow({
 			role="treeitem"
 			aria-expanded={canExpand ? expanded : undefined}
 			aria-level={row.depth + 1}
-		className={cn(
-			"relative flex items-center gap-1 border-b border-kumo-line/60 px-2 py-1.5 hover:bg-kumo-tint/50",
-			isDragging && "z-10 opacity-40 shadow-sm",
-			nestTarget && "bg-kumo-tint ring-1 ring-inset ring-kumo-link/40",
-		)}
-	>
-		<div
-			style={{ marginInlineStart: `${displayDepth * 1.1}rem` }}
-			className="flex min-w-0 flex-1 items-center gap-1"
+			className={cn(
+				"relative flex items-center gap-1 border-b border-kumo-line/60 px-2 py-1.5 hover:bg-kumo-tint/50",
+				isDragging && "z-10 opacity-40 shadow-sm",
+				nestTarget && "bg-kumo-tint ring-1 ring-inset ring-kumo-link/40",
+			)}
 		>
+			<div
+				style={{ marginInlineStart: `${displayDepth * 1.1}rem` }}
+				className="flex min-w-0 flex-1 items-center gap-1"
+			>
 				{onCommitMove && !node.stranded ? (
 					<button
 						type="button"
@@ -920,13 +912,7 @@ function TreeRow({
 	);
 }
 
-function TrashMenuItem({
-	node,
-	onDelete,
-}: {
-	node: DocTreeNode;
-	onDelete?: (id: string) => void;
-}) {
+function TrashMenuItem({ node, onDelete }: { node: DocTreeNode; onDelete?: (id: string) => void }) {
 	const { t } = useLingui();
 	const [open, setOpen] = React.useState(false);
 	return (

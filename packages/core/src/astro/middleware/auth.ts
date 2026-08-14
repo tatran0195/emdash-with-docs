@@ -62,9 +62,7 @@ const DEV_USER_NAME = "Dev Admin";
  * Shared with the /setup/dev-bypass route so a preview that never follows
  * that redirect still gets a signed-in admin on the next /_emdash request.
  */
-async function ensureDevSessionUser(
-	db: NonNullable<EmDashHandlers["db"]>,
-): Promise<User | null> {
+async function ensureDevSessionUser(db: NonNullable<EmDashHandlers["db"]>): Promise<User | null> {
 	const adapter = createKyselyAdapter(db);
 	const existing = await adapter.getUserByEmail(DEV_USER_EMAIL);
 	if (existing) return existing.disabled ? null : existing;

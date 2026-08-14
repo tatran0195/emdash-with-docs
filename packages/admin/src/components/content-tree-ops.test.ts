@@ -15,11 +15,7 @@ import {
 	TREE_INDENT_PX,
 } from "./content-tree-ops.js";
 
-function node(
-	id: string,
-	kind: "doc" | "section",
-	children: DocTreeNode[] = [],
-): DocTreeNode {
+function node(id: string, kind: "doc" | "section", children: DocTreeNode[] = []): DocTreeNode {
 	return {
 		id,
 		translationGroup: `tg-${id}`,

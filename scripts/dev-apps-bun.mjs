@@ -75,7 +75,15 @@ if (bunAvailable) {
 		run(bunBin, ["--bun", "astro", ...astroArgs], "runtime: bun → bun:sqlite");
 	}
 } else if (astroEntry) {
-	run(process.execPath, [astroEntry, ...astroArgs], "runtime: node → node:sqlite or better-sqlite3");
+	run(
+		process.execPath,
+		[astroEntry, ...astroArgs],
+		"runtime: node → node:sqlite or better-sqlite3",
+	);
 } else {
-	run(win ? "pnpm.cmd" : "pnpm", ["exec", "astro", ...astroArgs], "runtime: node → node:sqlite or better-sqlite3");
+	run(
+		win ? "pnpm.cmd" : "pnpm",
+		["exec", "astro", ...astroArgs],
+		"runtime: node → node:sqlite or better-sqlite3",
+	);
 }

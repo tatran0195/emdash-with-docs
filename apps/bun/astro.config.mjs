@@ -5,7 +5,8 @@ import { defineConfig, fontProviders } from "astro/config";
 import emdash, { local } from "emdash/astro";
 import { sqlite } from "emdash/db";
 
-export default defineConfig({
+/** @type {import('astro').AstroUserConfig} */
+const config = {
 	output: "server",
 	server: {
 		host: true,
@@ -52,8 +53,16 @@ export default defineConfig({
 				baseUrl: "/_emdash/api/media/file",
 			}),
 			plugins: [formsPlugin()],
+			fonts: {
+				scripts: ["japanese"],
+			},
 		}),
 	],
+	i18n: {
+		defaultLocale: "en",
+		locales: ["en", "ja"],
+		fallback: { ja: "en" },
+	},
 	fonts: [
 		{
 			provider: fontProviders.google(),
@@ -71,4 +80,6 @@ export default defineConfig({
 		},
 	],
 	devToolbar: { enabled: false },
-});
+};
+
+export default defineConfig(config);

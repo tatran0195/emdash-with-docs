@@ -61,9 +61,7 @@ export function flattenVisible(
 			ancestorIds: ancestorSet,
 		});
 		const showChildren =
-			node.children.length > 0 &&
-			expanded.has(node.id) &&
-			node.id !== options.collapsedId;
+			node.children.length > 0 && expanded.has(node.id) && node.id !== options.collapsedId;
 		if (showChildren) {
 			out.push(
 				...flattenVisible(node.children, expanded, {

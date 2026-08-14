@@ -991,10 +991,7 @@ export async function handleContentUpdate(
 
 			// Read existing item once for _rev check, old slug, and path redirects
 			const existing =
-				body._rev ||
-				body.slug ||
-				body.parentId !== undefined ||
-				body.versionSlug !== undefined
+				body._rev || body.slug || body.parentId !== undefined || body.versionSlug !== undefined
 					? await trxRepo.findById(collection, resolvedId)
 					: null;
 
@@ -2080,7 +2077,10 @@ export async function handleContentTree(
 		if (!hierarchical) {
 			return {
 				success: false,
-				error: { code: "NOT_HIERARCHICAL", message: `Collection "${collection}" is not hierarchical` },
+				error: {
+					code: "NOT_HIERARCHICAL",
+					message: `Collection "${collection}" is not hierarchical`,
+				},
 			};
 		}
 		const tree = await repo.findTree(collection, {
@@ -2185,7 +2185,10 @@ export async function handleContentReorder(
 	}
 }
 
-async function collectionIsHierarchical(db: Kysely<Database>, collection: string): Promise<boolean> {
+async function collectionIsHierarchical(
+	db: Kysely<Database>,
+	collection: string,
+): Promise<boolean> {
 	const row = await db
 		.selectFrom("_emdash_collections")
 		.select("supports")

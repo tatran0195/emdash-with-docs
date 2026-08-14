@@ -45,10 +45,7 @@ export function validateUrlPattern(pattern: string): void {
 	const tokens = [...pattern.matchAll(TOKEN_RE)].map((m) => m[1]);
 	const hasIdentity = tokens.includes("slug") || tokens.includes("path") || tokens.includes("id");
 	if (!hasIdentity) {
-		throw new UrlPatternError(
-			"Pattern must include {slug}, {path}, or {id}",
-			"MISSING_IDENTITY",
-		);
+		throw new UrlPatternError("Pattern must include {slug}, {path}, or {id}", "MISSING_IDENTITY");
 	}
 	if (tokens.includes("path")) {
 		if (!pattern.endsWith("{path}")) {
@@ -63,10 +60,7 @@ export function validateUrlPattern(pattern: string): void {
 		}
 	}
 	if (tokens.includes("version") && !tokens.includes("path") && !tokens.includes("slug")) {
-		throw new UrlPatternError(
-			"{version} requires {path} or {slug}",
-			"VERSION_WITHOUT_IDENTITY",
-		);
+		throw new UrlPatternError("{version} requires {path} or {slug}", "VERSION_WITHOUT_IDENTITY");
 	}
 }
 

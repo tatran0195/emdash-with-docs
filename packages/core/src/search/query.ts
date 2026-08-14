@@ -273,7 +273,14 @@ async function searchSingleCollection(
 	// search enabled without an index, dropped/corrupt table that hasn't
 	// been rebuilt yet) serve the same public API via LIKE.
 	if (!(await ftsManager.ftsTableExists(collection))) {
-		return searchLikeCollection(db, collection, query, options, searchableFields, collectionHasTitle);
+		return searchLikeCollection(
+			db,
+			collection,
+			query,
+			options,
+			searchableFields,
+			collectionHasTitle,
+		);
 	}
 
 	// Escape the query for FTS5
@@ -417,7 +424,10 @@ function highlightLikeSnippet(text: string, term: string): string {
 	const escaped = htmlEscape(text);
 	const needle = htmlEscape(term);
 	if (!needle) return escaped;
-	return escaped.replace(new RegExp(escapeRegExp(needle), "ig"), (match) => `<mark>${match}</mark>`);
+	return escaped.replace(
+		new RegExp(escapeRegExp(needle), "ig"),
+		(match) => `<mark>${match}</mark>`,
+	);
 }
 
 /**
@@ -589,9 +599,7 @@ export async function getSuggestions(
 		const contentTable = ftsManager.getContentTableName(collection);
 
 		if (!(await ftsManager.ftsTableExists(collection))) {
-			suggestions.push(
-				...(await suggestLikeCollection(db, collection, query, { limit, locale })),
-			);
+			suggestions.push(...(await suggestLikeCollection(db, collection, query, { limit, locale })));
 			continue;
 		}
 

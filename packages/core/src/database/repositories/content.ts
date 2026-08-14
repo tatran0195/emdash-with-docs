@@ -1,12 +1,17 @@
 import { sql, type Kysely } from "kysely";
 import { ulid } from "ulidx";
 
-import { invalidateCollectionCache } from "../../object-cache/index.js";
+import type { ContentVersion, DocTreeNode } from "../../content/tree-types.js";
 import {
-	buildFtsPrefixMatch,
-	buildSlugGlobPrefix,
-	escapeLikePattern,
-} from "../../search/match.js";
+	assertNoChildren,
+	assertNoCycle,
+	assertSiblingSlugUnique,
+	buildTree,
+	computePath,
+	type TreeRow,
+} from "../../content/tree.js";
+import { invalidateCollectionCache } from "../../object-cache/index.js";
+import { buildFtsPrefixMatch, buildSlugGlobPrefix, escapeLikePattern } from "../../search/match.js";
 import { chunks, SQL_BATCH_SIZE } from "../../utils/chunks.js";
 import { isMissingTableError } from "../../utils/db-errors.js";
 import { slugify } from "../../utils/slugify.js";
@@ -28,21 +33,10 @@ import {
 	encodeCursor,
 	decodeCursor,
 } from "./types.js";
-import {
-	assertNoChildren,
-	assertNoCycle,
-	assertSiblingSlugUnique,
-	buildTree,
-	computePath,
-	type TreeRow,
-} from "../../content/tree.js";
-import type { ContentVersion, DocTreeNode } from "../../content/tree-types.js";
 
 // Regex pattern for ULID validation
 const ULID_PATTERN = /^[0-9A-Z]{26}$/;
 const SQLSTATE_PATTERN = /^[0-9A-Z]{5}$/;
-
-
 
 function nullableColumnMatch(column: string, value: string | null): ReturnType<typeof sql> {
 	validateIdentifier(column, "content column");
@@ -545,9 +539,7 @@ export class ContentRepository {
 		versionSlug?: string,
 	): Promise<ContentItem | null> {
 		const tableName = getTableName(type);
-		const versionClause = versionSlug
-			? sql`AND version_slug = ${versionSlug}`
-			: sql``;
+		const versionClause = versionSlug ? sql`AND version_slug = ${versionSlug}` : sql``;
 
 		const result = locale
 			? await sql<Record<string, unknown>>`
@@ -748,7 +740,8 @@ export class ContentRepository {
 			if (input.sortOrder !== undefined) updates.sort_order = input.sortOrder;
 			if (input.nodeKind !== undefined) updates.node_kind = input.nodeKind;
 			if (input.versionSlug !== undefined) updates.version_slug = input.versionSlug;
-			const nextParent = input.parentId !== undefined ? input.parentId : (existing.parentId ?? null);
+			const nextParent =
+				input.parentId !== undefined ? input.parentId : (existing.parentId ?? null);
 			const nextSlug = input.slug !== undefined ? input.slug : existing.slug;
 			const nextVersion = input.versionSlug ?? existing.versionSlug ?? "current";
 			const nextLocale = existing.locale || "en";
@@ -2052,7 +2045,8 @@ export class ContentRepository {
 				.execute();
 		}
 		const updated = await this.getVersion(type, slug);
-		if (!updated) throw new EmDashValidationError(`Version "${slug}" not found`, { code: "NOT_FOUND" });
+		if (!updated)
+			throw new EmDashValidationError(`Version "${slug}" not found`, { code: "NOT_FOUND" });
 		return updated;
 	}
 
@@ -2179,7 +2173,13 @@ export class ContentRepository {
 
 	private async computeStoredPath(
 		type: string,
-		input: { id: string; slug: string; parentId: string | null; locale: string; versionSlug: string },
+		input: {
+			id: string;
+			slug: string;
+			parentId: string | null;
+			locale: string;
+			versionSlug: string;
+		},
 	): Promise<string> {
 		const rows = await this.findTreeRows(type, {
 			locale: input.locale,
@@ -2200,7 +2200,11 @@ export class ContentRepository {
 		};
 		const existingIndex = rows.findIndex((row) => row.id === input.id);
 		if (existingIndex >= 0) {
-			rows[existingIndex] = { ...rows[existingIndex], ...self, translationGroup: rows[existingIndex].translationGroup };
+			rows[existingIndex] = {
+				...rows[existingIndex],
+				...self,
+				translationGroup: rows[existingIndex].translationGroup,
+			};
 		} else {
 			rows.push(self);
 		}
@@ -2209,7 +2213,13 @@ export class ContentRepository {
 
 	private async assertTreeWrite(
 		type: string,
-		input: { id: string; slug: string; parentId: string | null; locale: string; versionSlug: string },
+		input: {
+			id: string;
+			slug: string;
+			parentId: string | null;
+			locale: string;
+			versionSlug: string;
+		},
 	): Promise<void> {
 		const rows = await this.findTreeRows(type, {
 			locale: input.locale,

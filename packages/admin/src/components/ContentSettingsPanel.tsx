@@ -811,10 +811,7 @@ function TreePlacementFields({
 		return ids;
 	}, [tree, item]);
 
-	const parentOptions = React.useMemo(
-		() => flattenParentOptions(tree, exclude),
-		[tree, exclude],
-	);
+	const parentOptions = React.useMemo(() => flattenParentOptions(tree, exclude), [tree, exclude]);
 
 	const parentItems: Record<string, string> = { "": t`Top level` };
 	for (const option of parentOptions) parentItems[option.value] = option.label;
@@ -853,9 +850,7 @@ function TreePlacementFields({
 					</Select.Option>
 				))}
 			</Select>
-			{item?.path && (
-				<Input label={t`Path`} value={item.path} readOnly />
-			)}
+			{item?.path && <Input label={t`Path`} value={item.path} readOnly />}
 			<p className="text-xs text-kumo-subtle">
 				{t`Path is computed from the tree. Sections are real pages, not just labels.`}
 			</p>

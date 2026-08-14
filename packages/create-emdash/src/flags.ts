@@ -35,7 +35,13 @@ export type TemplateKey = "blog" | "starter" | "marketing" | "portfolio" | "docs
 export type PackageManager = "pnpm" | "npm" | "yarn" | "bun";
 
 const PLATFORMS: readonly Platform[] = ["node", "cloudflare"] as const;
-const TEMPLATES: readonly TemplateKey[] = ["blog", "starter", "marketing", "portfolio", "docs"] as const;
+const TEMPLATES: readonly TemplateKey[] = [
+	"blog",
+	"starter",
+	"marketing",
+	"portfolio",
+	"docs",
+] as const;
 const PACKAGE_MANAGERS: readonly PackageManager[] = ["pnpm", "npm", "yarn", "bun"] as const;
 
 /**

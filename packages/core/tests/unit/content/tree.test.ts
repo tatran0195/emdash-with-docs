@@ -65,7 +65,14 @@ function sample() {
 		parentId: "r",
 		path: "reference/cli",
 	});
-	return { guides, install, config, reference, cli, rows: [guides, install, config, reference, cli] };
+	return {
+		guides,
+		install,
+		config,
+		reference,
+		cli,
+		rows: [guides, install, config, reference, cli],
+	};
 }
 
 describe("buildTree", () => {

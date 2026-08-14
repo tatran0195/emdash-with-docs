@@ -2,8 +2,8 @@ import Database from "better-sqlite3";
 import { Kysely, SqliteDialect } from "kysely";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { ContentRepository } from "../../../src/database/repositories/content.js";
 import { runMigrations } from "../../../src/database/migrations/runner.js";
+import { ContentRepository } from "../../../src/database/repositories/content.js";
 import type { Database as EmDashDatabase } from "../../../src/database/types.js";
 import { SchemaRegistry } from "../../../src/schema/registry.js";
 
@@ -174,7 +174,9 @@ describe("hierarchical docs collection", () => {
 		expect(frozenInstall?.parentId).toBe(frozenGuides?.translationGroup);
 		expect(frozenInstall?.id).not.toBe(install.id);
 
-		await expect(repo.update("docs", frozenGuides!.id, { slug: "howto" })).rejects.toThrow(/frozen/i);
+		await expect(repo.update("docs", frozenGuides!.id, { slug: "howto" })).rejects.toThrow(
+			/frozen/i,
+		);
 		await expect(repo.delete("docs", frozenInstall!.id)).rejects.toThrow(/frozen/i);
 
 		await expect(repo.cutVersion("docs", { slug: "1.0", label: "1.0 again" })).rejects.toThrow(
@@ -183,7 +185,9 @@ describe("hierarchical docs collection", () => {
 
 		const renamed = await repo.update("docs", guides.id, { slug: "howto" });
 		expect(renamed.path).toBe("howto");
-		expect(await repo.findByPath("docs", "howto/install", { versionSlug: "current" })).not.toBeNull();
+		expect(
+			await repo.findByPath("docs", "howto/install", { versionSlug: "current" }),
+		).not.toBeNull();
 		expect(await repo.findByPath("docs", "guides/install", { versionSlug: "1.0" })).not.toBeNull();
 	});
 });

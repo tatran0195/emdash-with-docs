@@ -15,12 +15,7 @@
 			"slug": "posts",
 			"label": "Posts",
 			"labelSingular": "Post",
-			"supports": [
-				"drafts",
-				"revisions",
-				"search",
-				"seo"
-			],
+			"supports": ["drafts", "revisions", "search", "seo"],
 			"commentsEnabled": true,
 			"fields": [
 				{
@@ -53,11 +48,7 @@
 			"slug": "pages",
 			"label": "Pages",
 			"labelSingular": "Page",
-			"supports": [
-				"drafts",
-				"revisions",
-				"search"
-			],
+			"supports": ["drafts", "revisions", "search"],
 			"fields": [
 				{
 					"slug": "title",
@@ -80,14 +71,7 @@
 			"label": "Docs",
 			"labelSingular": "Doc",
 			"urlPattern": "/docs/{path}",
-			"supports": [
-				"drafts",
-				"revisions",
-				"search",
-				"seo",
-				"hierarchical",
-				"versioned"
-			],
+			"supports": ["drafts", "revisions", "search", "seo", "hierarchical", "versioned"],
 			"fields": [
 				{
 					"slug": "title",
@@ -111,9 +95,7 @@
 			"label": "Categories",
 			"labelSingular": "Category",
 			"hierarchical": true,
-			"collections": [
-				"posts"
-			],
+			"collections": ["posts"],
 			"terms": [
 				{
 					"slug": "development",
@@ -134,9 +116,7 @@
 			"label": "Tags",
 			"labelSingular": "Tag",
 			"hierarchical": false,
-			"collections": [
-				"posts"
-			],
+			"collections": ["posts"],
 			"terms": [
 				{
 					"slug": "webdev",
@@ -268,12 +248,7 @@
 			"slug": "newsletter-signup",
 			"title": "Newsletter Signup",
 			"description": "A call-to-action block for newsletter subscriptions",
-			"keywords": [
-				"newsletter",
-				"subscribe",
-				"email",
-				"cta"
-			],
+			"keywords": ["newsletter", "subscribe", "email", "cta"],
 			"source": "theme",
 			"content": [
 				{
@@ -302,11 +277,7 @@
 			"slug": "about-author",
 			"title": "About the Author",
 			"description": "Brief author bio for use in posts or pages",
-			"keywords": [
-				"author",
-				"bio",
-				"about"
-			],
+			"keywords": ["author", "bio", "about"],
 			"source": "theme",
 			"content": [
 				{
@@ -443,12 +414,8 @@
 					}
 				],
 				"taxonomies": {
-					"category": [
-						"development"
-					],
-					"tag": [
-						"opinion"
-					]
+					"category": ["development"],
+					"tag": ["opinion"]
 				}
 			},
 			{
@@ -524,13 +491,8 @@
 					}
 				],
 				"taxonomies": {
-					"category": [
-						"development"
-					],
-					"tag": [
-						"webdev",
-						"opinion"
-					]
+					"category": ["development"],
+					"tag": ["webdev", "opinion"]
 				}
 			},
 			{
@@ -601,12 +563,8 @@
 					]
 				},
 				"taxonomies": {
-					"category": [
-						"notes"
-					],
-					"tag": [
-						"opinion"
-					]
+					"category": ["notes"],
+					"tag": ["opinion"]
 				}
 			},
 			{
@@ -677,12 +635,8 @@
 					]
 				},
 				"taxonomies": {
-					"category": [
-						"development"
-					],
-					"tag": [
-						"tools"
-					]
+					"category": ["development"],
+					"tag": ["tools"]
 				}
 			},
 			{
@@ -753,12 +707,8 @@
 					]
 				},
 				"taxonomies": {
-					"category": [
-						"design"
-					],
-					"tag": [
-						"creativity"
-					]
+					"category": ["design"],
+					"tag": ["creativity"]
 				}
 			},
 			{
@@ -829,12 +779,8 @@
 					]
 				},
 				"taxonomies": {
-					"category": [
-						"development"
-					],
-					"tag": [
-						"creativity"
-					]
+					"category": ["development"],
+					"tag": ["creativity"]
 				}
 			},
 			{
@@ -905,12 +851,8 @@
 					]
 				},
 				"taxonomies": {
-					"category": [
-						"notes"
-					],
-					"tag": [
-						"opinion"
-					]
+					"category": ["notes"],
+					"tag": ["opinion"]
 				}
 			},
 			{

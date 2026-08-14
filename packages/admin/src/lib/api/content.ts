@@ -120,7 +120,7 @@ export interface UpdateContentInput {
 	authorId?: string | null;
 	bylines?: BylineCreditInput[];
 	/** Skip revision creation (used by autosave) */
-		skipRevision?: boolean;
+	skipRevision?: boolean;
 	seo?: ContentSeoInput;
 	parentId?: string | null;
 	sortOrder?: number;

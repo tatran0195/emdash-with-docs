@@ -125,7 +125,9 @@ async function openBunSqlite(filePath: string): Promise<KyselySqliteDatabase> {
 					};
 				},
 				iterate: (...params) =>
-					(stmt.iterate ? stmt.iterate(...params) : stmt.all(...params)[Symbol.iterator]()) as IterableIterator<unknown>,
+					(stmt.iterate
+						? stmt.iterate(...params)
+						: stmt.all(...params)[Symbol.iterator]()) as IterableIterator<unknown>,
 			});
 		},
 	};

@@ -36,7 +36,10 @@ export function nodeGroup(row: Pick<TreeRow, "translationGroup" | "id">): string
 	return row.translationGroup || row.id;
 }
 
-export function isStranded(row: Pick<TreeRow, "parentId">, renderedParentId: string | null): boolean {
+export function isStranded(
+	row: Pick<TreeRow, "parentId">,
+	renderedParentId: string | null,
+): boolean {
 	return renderedParentId === null && !!row.parentId;
 }
 
@@ -121,10 +124,7 @@ export function breadcrumbs(nodes: DocTreeNode[], path: string): DocCrumb[] {
 	const crumbs: DocCrumb[] = [];
 	function walk(list: DocTreeNode[], trail: DocCrumb[]): boolean {
 		for (const node of list) {
-			const next = [
-				...trail,
-				{ id: node.id, title: node.title, path: node.path, kind: node.kind },
-			];
+			const next = [...trail, { id: node.id, title: node.title, path: node.path, kind: node.kind }];
 			if (node.path === path) {
 				crumbs.push(...next);
 				return true;
@@ -151,10 +151,7 @@ export function neighbors(nodes: DocTreeNode[], path: string): DocNeighbors {
  * Walk ancestors via parentId (translation_group). Returns groups from
  * parent up to root. Throws CYCLE / MAX_DEPTH.
  */
-export function ancestorGroups(
-	rows: TreeRow[],
-	startParentId: string | null,
-): string[] {
+export function ancestorGroups(rows: TreeRow[], startParentId: string | null): string[] {
 	if (!startParentId) return [];
 	const byGroup = new Map<string, TreeRow>();
 	for (const row of rows) byGroup.set(nodeGroup(row), row);
@@ -276,45 +273,37 @@ export function applySiblingReorder(
 	const current = new Set(siblings.map((r) => r.id));
 	const next = new Set(ids);
 	if (current.size !== next.size || [...current].some((id) => !next.has(id))) {
-		throw new TreeError(
-			"Reorder ids must be exactly the current sibling set",
-			"REORDER_MISMATCH",
-		);
+		throw new TreeError("Reorder ids must be exactly the current sibling set", "REORDER_MISMATCH");
 	}
 	const order = new Map(ids.map((id, i) => [id, i]));
-	return rows.map((r) =>
-		order.has(r.id) ? { ...r, sortOrder: order.get(r.id)! } : r,
-	);
+	return rows.map((r) => (order.has(r.id) ? { ...r, sortOrder: order.get(r.id)! } : r));
 }
 
-export function availableParents(
-	rows: TreeRow[],
-	current?: TreeRow,
-): TreeRow[] {
+export function availableParents(rows: TreeRow[], current?: TreeRow): TreeRow[] {
 	if (!current) return rows;
 	const tree = buildTree(rows);
 	const self = findNode(tree, current.path);
 	const excluded = new Set<string>(
-		self ? [self.translationGroup, ...flattenTree(self.children).map((n) => n.translationGroup)] : [],
+		self
+			? [self.translationGroup, ...flattenTree(self.children).map((n) => n.translationGroup)]
+			: [],
 	);
 	return rows.filter((r) => !excluded.has(nodeGroup(r)));
 }
 
-export function rowFromPartial(
-	input: {
-		id: string;
-		slug: string;
-		title: string;
-		parentId?: string | null;
-		sortOrder?: number;
-		nodeKind?: DocNodeKind;
-		locale?: string;
-		translationGroup?: string;
-		versionSlug?: string;
-		status?: string;
-		path?: string;
-	},
-): TreeRow {
+export function rowFromPartial(input: {
+	id: string;
+	slug: string;
+	title: string;
+	parentId?: string | null;
+	sortOrder?: number;
+	nodeKind?: DocNodeKind;
+	locale?: string;
+	translationGroup?: string;
+	versionSlug?: string;
+	status?: string;
+	path?: string;
+}): TreeRow {
 	return {
 		id: input.id,
 		slug: input.slug,

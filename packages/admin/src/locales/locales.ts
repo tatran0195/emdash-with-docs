@@ -32,32 +32,32 @@ export interface LocaleDefinition {
 export const LOCALES: LocaleDefinition[] = [
 	// Source locale first, then alphabetical by English name.
 	{ code: "en", label: "English", enabled: true },
-	{ code: "ar", label: "العربية", enabled: true, dir: "rtl" }, // Arabic
-	{ code: "eu", label: "Euskara", enabled: true }, // Basque
-	{ code: "ca", label: "Català", enabled: true }, // Catalan
-	{ code: "zh-CN", label: "简体中文", enabled: true }, // Chinese (Simplified)
-	{ code: "zh-TW", label: "繁體中文", enabled: true }, // Chinese (Traditional)
-	{ code: "cs", label: "Čeština", enabled: true }, // Czech
-	{ code: "nl", label: "Nederlands", enabled: true }, // Dutch
-	{ code: "en-GB", label: "English (UK)", enabled: true }, // English (United Kingdom)
-	{ code: "fa", label: "فارسی", enabled: true, dir: "rtl" }, // Farsi (also known as Persian)
-	{ code: "fr", label: "Français", enabled: true }, // French
-	{ code: "de", label: "Deutsch", enabled: true }, // German
-	{ code: "hi", label: "हिन्दी", enabled: true }, // Hindi
-	{ code: "hu", label: "Magyar", enabled: true }, // Hungarian
-	{ code: "id", label: "Bahasa Indonesia", enabled: true }, // Indonesian
+	{ code: "ar", label: "العربية", enabled: false, dir: "rtl" }, // Arabic
+	{ code: "eu", label: "Euskara", enabled: false }, // Basque
+	{ code: "ca", label: "Català", enabled: false }, // Catalan
+	{ code: "zh-CN", label: "简体中文", enabled: false }, // Chinese (Simplified)
+	{ code: "zh-TW", label: "繁體中文", enabled: false }, // Chinese (Traditional)
+	{ code: "cs", label: "Čeština", enabled: false }, // Czech
+	{ code: "nl", label: "Nederlands", enabled: false }, // Dutch
+	{ code: "en-GB", label: "English (UK)", enabled: false }, // English (United Kingdom)
+	{ code: "fa", label: "فارسی", enabled: false, dir: "rtl" }, // Farsi (also known as Persian)
+	{ code: "fr", label: "Français", enabled: false }, // French
+	{ code: "de", label: "Deutsch", enabled: false }, // German
+	{ code: "hi", label: "हिन्दी", enabled: false }, // Hindi
+	{ code: "hu", label: "Magyar", enabled: false }, // Hungarian
+	{ code: "id", label: "Bahasa Indonesia", enabled: false }, // Indonesian
 	{ code: "ja", label: "日本語", enabled: true }, // Japanese
 	{ code: "ko", label: "한국어", enabled: false }, // Korean
-	{ code: "nb", label: "Norsk bokmål", enabled: true }, // Norwegian Bokmål
-	{ code: "pl", label: "Polski", enabled: true }, // Polish
-	{ code: "pt-BR", label: "Português (Brasil)", enabled: true }, // Portuguese (Brazil)
-	{ code: "sr-Latn", label: "Srpski", enabled: true }, // Serbian (Latin script)
-	{ code: "es-419", label: "Español (Latinoamérica)", enabled: true }, // Spanish (Latin America)
-	{ code: "es-ES", label: "Español (España)", enabled: true }, // Spanish (Spain) - BCP 47
-	{ code: "sv", label: "Svenska", enabled: true }, // Swedish
-	{ code: "th", label: "ไทย", enabled: true }, // Thai
-	{ code: "tr", label: "Türkçe", enabled: true }, // Turkish
-	{ code: "uk", label: "Українська", enabled: true }, // Ukrainian
+	{ code: "nb", label: "Norsk bokmål", enabled: false }, // Norwegian Bokmål
+	{ code: "pl", label: "Polski", enabled: false }, // Polish
+	{ code: "pt-BR", label: "Português (Brasil)", enabled: false }, // Portuguese (Brazil)
+	{ code: "sr-Latn", label: "Srpski", enabled: false }, // Serbian (Latin script)
+	{ code: "es-419", label: "Español (Latinoamérica)", enabled: false }, // Spanish (Latin America)
+	{ code: "es-ES", label: "Español (España)", enabled: false }, // Spanish (Spain) - BCP 47
+	{ code: "sv", label: "Svenska", enabled: false }, // Swedish
+	{ code: "th", label: "ไทย", enabled: false }, // Thai
+	{ code: "tr", label: "Türkçe", enabled: false }, // Turkish
+	{ code: "uk", label: "Українська", enabled: false }, // Ukrainian
 	// Pseudo-locale for i18n testing - never enabled in the admin UI by default.
 	// Set EMDASH_PSEUDO_LOCALE=1 in .env to expose it in the locale switcher (dev only).
 	{ code: "pseudo", label: "Pseudo", enabled: false },

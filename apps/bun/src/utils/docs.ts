@@ -15,10 +15,7 @@ export interface DocsRoute {
  * Peel a leading version slug from `/docs/{...path}` the same way the
  * catch-all template does: default version stays unprefixed.
  */
-export function parseDocsRoute(
-	rawPath: string | undefined,
-	versions: ContentVersion[],
-): DocsRoute {
+export function parseDocsRoute(rawPath: string | undefined, versions: ContentVersion[]): DocsRoute {
 	const segments = (rawPath ?? "").split("/").filter(Boolean);
 	const known = new Set(versions.map((version) => version.slug));
 	const defaultVersion = versions.find((version) => version.isDefault)?.slug ?? "current";

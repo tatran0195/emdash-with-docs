@@ -10,7 +10,7 @@ import {
 import { PortableText } from "emdash/ui";
 import Base from "../../layouts/Base.astro";
 import DocsLayout from "../../components/docs/DocsLayout.astro";
-import { parseDocsRoute, resolveFallbackPath } from "../../utils/docs";
+import { parseDocsRoute, resolveFallbackPath, findNodeByPath } from "../../utils/docs";
 
 const raw = Astro.params.path;
 const rawPath = Array.isArray(raw) ? raw.join("/") : (raw ?? "");
@@ -47,7 +47,7 @@ const seo = getSeoMeta(doc, {
 	path: `${route.prefix}/${route.path}`,
 });
 
-const kind = doc.data.nodeKind === "section" ? "section" : "doc";
+const kind = findNodeByPath(tree, route.path)?.kind === "section" ? "section" : "doc";
 ---
 
 <Base

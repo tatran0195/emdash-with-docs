@@ -2820,15 +2820,15 @@ export class EmDashRuntime {
 			status?: string;
 			authorId?: string;
 			bylines?: Array<{ bylineId: string; roleLabel?: string | null }>;
-		locale?: string;
-		translationOf?: string;
-		taxonomies?: Record<string, string[]>;
-		parentId?: string | null;
-		sortOrder?: number;
-		nodeKind?: "doc" | "section";
-		versionSlug?: string;
-	},
-) {
+			locale?: string;
+			translationOf?: string;
+			taxonomies?: Record<string, string[]>;
+			parentId?: string | null;
+			sortOrder?: number;
+			nodeKind?: "doc" | "section";
+			versionSlug?: string;
+		},
+	) {
 		// Run beforeSave hooks (trusted plugins)
 		let processedData = body.data;
 		if (this.hooks.hasHooks("content:beforeSave")) {

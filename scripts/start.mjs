@@ -167,7 +167,12 @@ function ensureNode22() {
 
 	const candidates = [
 		path.join(localBin, win ? "node.exe" : "node"),
-		path.join("/tmp", `node-v${NODE_WANT}-${process.platform === "linux" ? "linux" : "darwin"}-${process.arch}`, "bin", "node"),
+		path.join(
+			"/tmp",
+			`node-v${NODE_WANT}-${process.platform === "linux" ? "linux" : "darwin"}-${process.arch}`,
+			"bin",
+			"node",
+		),
 	];
 	let next = candidates.find((p) => existsSync(p) && major(nodeVersionOf(p) || "0") >= 22);
 
@@ -258,11 +263,17 @@ function ensurePnpm() {
 	}
 
 	log(`activating pnpm@${PNPM_WANT} via corepack`);
-	const corepackBin = which("corepack") || path.join(path.dirname(process.execPath), win ? "corepack.cmd" : "corepack");
+	const corepackBin =
+		which("corepack") ||
+		path.join(path.dirname(process.execPath), win ? "corepack.cmd" : "corepack");
 	if (!existsSync(corepackBin) && !which("corepack")) {
 		fail("corepack not found; install pnpm 10+ (https://pnpm.io/installation) and re-run");
 	}
-	const enable = spawnSync("corepack", ["enable"], { encoding: "utf8", windowsHide: true, shell: win });
+	const enable = spawnSync("corepack", ["enable"], {
+		encoding: "utf8",
+		windowsHide: true,
+		shell: win,
+	});
 	if (enable.status !== 0) {
 		console.warn("[start] corepack enable failed (may need a global install of pnpm)");
 	}
@@ -274,7 +285,9 @@ function ensurePnpm() {
 	if (prepare.status !== 0 || !which("pnpm")) {
 		fail("could not activate pnpm via corepack. Install pnpm 10+ and re-run.");
 	}
-	log(`pnpm ${(spawnSync("pnpm", ["-v"], { encoding: "utf8", windowsHide: true, shell: win }).stdout || "").trim()}`);
+	log(
+		`pnpm ${(spawnSync("pnpm", ["-v"], { encoding: "utf8", windowsHide: true, shell: win }).stdout || "").trim()}`,
+	);
 }
 
 function heapEnv(mb) {
@@ -343,7 +356,8 @@ function ensureBuild(flags, mode) {
 	run(turboBin(), args, { env: heapEnv(lowMem ? 3072 : 4096) });
 
 	const still = REQUIRED_DIST.filter((rel) => !existsSync(path.join(root, rel)));
-	if (still.length) fail(`build finished but still missing:\n         ${still.join("\n         ")}`);
+	if (still.length)
+		fail(`build finished but still missing:\n         ${still.join("\n         ")}`);
 	if (wantApp && needsAppBuild()) fail(`production build missing ${PROD_ENTRY}`);
 }
 
@@ -380,15 +394,23 @@ function startDev(flags) {
 	}
 	const astro = resolveAstroEntry();
 	if (astro) {
-		return spawnInherit(process.execPath, [astro, "dev", "--host", flags.host, "--port", String(flags.port)], {
+		return spawnInherit(
+			process.execPath,
+			[astro, "dev", "--host", flags.host, "--port", String(flags.port)],
+			{
+				cwd: appDir,
+				env,
+			},
+		);
+	}
+	return spawnInherit(
+		win ? "pnpm.cmd" : "pnpm",
+		["exec", "astro", "dev", "--host", flags.host, "--port", String(flags.port)],
+		{
 			cwd: appDir,
 			env,
-		});
-	}
-	return spawnInherit(win ? "pnpm.cmd" : "pnpm", ["exec", "astro", "dev", "--host", flags.host, "--port", String(flags.port)], {
-		cwd: appDir,
-		env,
-	});
+		},
+	);
 }
 
 function startProd(flags) {
@@ -443,7 +465,9 @@ async function waitForServer(base, timeoutMs) {
 		}
 		await new Promise((r) => setTimeout(r, 500));
 	}
-	throw new Error(`timed out after ${Math.round(timeoutMs / 1000)}s waiting for ${base}${last ? ` (${last})` : ""}`);
+	throw new Error(
+		`timed out after ${Math.round(timeoutMs / 1000)}s waiting for ${base}${last ? ` (${last})` : ""}`,
+	);
 }
 
 function cookieHeader(setCookie) {
@@ -501,7 +525,8 @@ async function runChecks(base) {
 				? "HTTP 401 NOT_AUTHENTICATED"
 				: `HTTP 401 (${body.slice(0, 80)})`;
 		}
-		if (res.status !== 200) throw new Error(`expected 401 or 200, got ${res.status}: ${body.slice(0, 180)}`);
+		if (res.status !== 200)
+			throw new Error(`expected 401 or 200, got ${res.status}: ${body.slice(0, 180)}`);
 		if (!/"current"|"1\.0"|versions/i.test(body)) {
 			throw new Error(`HTTP 200 but unexpected body: ${body.slice(0, 180)}`);
 		}
@@ -535,7 +560,8 @@ async function runChecks(base) {
 		const body = await textOf(res);
 		if (res.status === 401) throw new Error("still 401 after bypass — session cookie not applied");
 		if (res.status >= 500) throw new Error(`HTTP ${res.status}: ${body.slice(0, 220)}`);
-		if (res.status !== 200) throw new Error(`expected 200, got ${res.status}: ${body.slice(0, 180)}`);
+		if (res.status !== 200)
+			throw new Error(`expected 200, got ${res.status}: ${body.slice(0, 180)}`);
 		let json;
 		try {
 			json = JSON.parse(body);
@@ -572,7 +598,8 @@ async function runChecks(base) {
 		});
 		const body = await textOf(res);
 		if (res.status >= 500) throw new Error(`HTTP ${res.status}: ${body.slice(0, 180)}`);
-		if (res.status !== 200) throw new Error(`expected 200, got ${res.status}: ${body.slice(0, 180)}`);
+		if (res.status !== 200)
+			throw new Error(`expected 200, got ${res.status}: ${body.slice(0, 180)}`);
 		let json;
 		try {
 			json = JSON.parse(body);

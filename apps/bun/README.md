@@ -8,12 +8,12 @@ It keeps the blog UI (posts, pages, tags, RSS) and adds a Docusaurus-style **doc
 
 ## What is different from `demos/cloudflare`
 
-| Cloudflare demo | This app |
-| --- | --- |
-| `@astrojs/cloudflare` + `workerd` | `@astrojs/node` standalone |
-| D1 + R2 + Access + AI Search | `sqlite({ url: "file:./data.db" })` + `local()` uploads |
-| `wrangler.jsonc`, `worker.ts` | none |
-| `pnpm start` via Workers | `node ./dist/server/entry.mjs` |
+| Cloudflare demo                   | This app                                                |
+| --------------------------------- | ------------------------------------------------------- |
+| `@astrojs/cloudflare` + `workerd` | `@astrojs/node` standalone                              |
+| D1 + R2 + Access + AI Search      | `sqlite({ url: "file:./data.db" })` + `local()` uploads |
+| `wrangler.jsonc`, `worker.ts`     | none                                                    |
+| `pnpm start` via Workers          | `node ./dist/server/entry.mjs`                          |
 
 ## Setup
 
@@ -29,11 +29,11 @@ On Windows: `start.cmd`, `start.cmd prod`, or `node scripts/start.mjs`.
 
 `pnpm dev` still works: it is `turbo run dev --filter=@emdash-cms/demo-bun`. Turbo builds workspace packages, then `scripts/dev-apps-bun.mjs` starts Astro:
 
-| Process | SQLite driver |
-| --- | --- |
-| `bun` on PATH (or already under Bun) | `bun:sqlite` |
-| Node 22.5+ | `node:sqlite` (`DatabaseSync`) |
-| otherwise | `better-sqlite3` |
+| Process                              | SQLite driver                  |
+| ------------------------------------ | ------------------------------ |
+| `bun` on PATH (or already under Bun) | `bun:sqlite`                   |
+| Node 22.5+                           | `node:sqlite` (`DatabaseSync`) |
+| otherwise                            | `better-sqlite3`               |
 
 Force a runtime with `pnpm --filter @emdash-cms/demo-bun dev:bun` or `dev:node`.
 
@@ -60,15 +60,15 @@ EmDash runs migrations and applies `seed/seed.json` on first request. No manual 
 
 New components under `src/components/docs/`:
 
-| Component | Role |
-| --- | --- |
-| `DocsLayout` | Three-column docs chrome (sidebar, article, outline) + mobile drawer |
-| `DocsSidebar` / `DocsSidebarNode` | Arbitrary-depth ordered tree; folders are links |
-| `DocsVersionSwitcher` | Catalog select; default version stays unprefixed |
-| `DocsBreadcrumbs` | Crumbs from `getEmDashBreadcrumbs` |
-| `DocsPager` | Prev / next from `getEmDashNeighbors` |
-| `DocsToc` | On-this-page outline from `h2`/`h3` |
-| `DocsSearch` | Local FTS search scoped to docs (`/search?in=docs`) |
+| Component                         | Role                                                                 |
+| --------------------------------- | -------------------------------------------------------------------- |
+| `DocsLayout`                      | Three-column docs chrome (sidebar, article, outline) + mobile drawer |
+| `DocsSidebar` / `DocsSidebarNode` | Arbitrary-depth ordered tree; folders are links                      |
+| `DocsVersionSwitcher`             | Catalog select; default version stays unprefixed                     |
+| `DocsBreadcrumbs`                 | Crumbs from `getEmDashBreadcrumbs`                                   |
+| `DocsPager`                       | Prev / next from `getEmDashNeighbors`                                |
+| `DocsToc`                         | On-this-page outline from `h2`/`h3`                                  |
+| `DocsSearch`                      | Local FTS search scoped to docs (`/search?in=docs`)                  |
 
 Public helpers used: `getEmDashTree`, `getEmDashEntryByPath`, `getEmDashBreadcrumbs`, `getEmDashNeighbors`, `getEmDashVersions`.
 

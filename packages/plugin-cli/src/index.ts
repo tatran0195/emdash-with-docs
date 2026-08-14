@@ -25,7 +25,6 @@
 
 import { defineCommand, runMain } from "citty";
 
-import { buildCommand } from "./plugin-build/command.js";
 import { bundleCommand } from "./bundle/command.js";
 import { infoCommand } from "./commands/info.js";
 import { initCommand } from "./commands/init.js";
@@ -38,6 +37,7 @@ import { updatePackageCommand } from "./commands/update-package.js";
 import { validateCommand } from "./commands/validate.js";
 import { whoamiCommand } from "./commands/whoami.js";
 import { devCommand } from "./dev/command.js";
+import { buildCommand } from "./plugin-build/command.js";
 
 const main = defineCommand({
 	meta: {

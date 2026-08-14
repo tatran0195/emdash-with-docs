@@ -782,10 +782,7 @@ export function createMcpServer(
 			inputSchema: z.object({
 				collection: z.string().describe("Hierarchical collection slug"),
 				id: z.string().describe("Content item ID or slug to move"),
-				parentId: z
-					.string()
-					.nullable()
-					.describe("Parent translation group, or null for top level"),
+				parentId: z.string().nullable().describe("Parent translation group, or null for top level"),
 			}),
 		},
 		async (args, extra) => {
@@ -942,11 +939,10 @@ export function createMcpServer(
 				nodeKind: z
 					.enum(["doc", "section"])
 					.optional()
-					.describe("For hierarchical collections: 'doc' (page) or 'section' (folder with its own page)."),
-				versionSlug: z
-					.string()
-					.optional()
-					.describe("Docs version slug (default: current)."),
+					.describe(
+						"For hierarchical collections: 'doc' (page) or 'section' (folder with its own page).",
+					),
+				versionSlug: z.string().optional().describe("Docs version slug (default: current)."),
 			}),
 			annotations: { destructiveHint: false },
 		},
@@ -1082,9 +1078,7 @@ export function createMcpServer(
 					.string()
 					.nullable()
 					.optional()
-					.describe(
-						"For hierarchical collections: parent translation group, or null for a root.",
-					),
+					.describe("For hierarchical collections: parent translation group, or null for a root."),
 				nodeKind: z
 					.enum(["doc", "section"])
 					.optional()

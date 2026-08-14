@@ -24,8 +24,8 @@
  * import resolves there at typecheck time without our help.
  */
 
-import { breadcrumbs as crumbsFromTree, neighbors as neighborsFromTree } from "./content/tree.js";
 import type { ContentVersion, DocCrumb, DocNeighbors, DocTreeNode } from "./content/tree-types.js";
+import { breadcrumbs as crumbsFromTree, neighbors as neighborsFromTree } from "./content/tree.js";
 import {
 	matchUrlPath,
 	patternToRegex,
