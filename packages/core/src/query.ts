@@ -1318,13 +1318,7 @@ export interface ResolvePathResult<T = Record<string, unknown>> {
 	params: Record<string, string>;
 }
 
-/** Cached compiled URL patterns for resolveEmDashPath */
-interface CachedPattern {
-	slug: string;
-	regex: RegExp;
-	paramNames: string[];
-}
-let cachedUrlPatterns: CachedPattern[] | null = null;
+let cachedUrlPatterns: CompiledPattern[] | null = null;
 
 /**
  * Invalidate the cached URL patterns used by resolveEmDashPath.
@@ -1392,7 +1386,7 @@ export async function resolveEmDashPath<T = Record<string, unknown>>(
 	const db = await getDb();
 	const knownVersions = await loadKnownVersions(db);
 	for (const pattern of cachedUrlPatterns) {
-		if (pattern.supports.includes("versioned") && !knownVersions.has(pattern.collection)) {
+		if (pattern.supports?.includes("versioned") && !knownVersions.has(pattern.collection)) {
 			knownVersions.set(pattern.collection, new Set(["current"]));
 		}
 	}

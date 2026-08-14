@@ -45,6 +45,10 @@
       "types": "./dist/astro/middleware/redirect.d.mts",
       "default": "./dist/astro/middleware/redirect.mjs"
     },
+    "./middleware/i18n-bypass": {
+      "types": "./dist/astro/middleware/i18n-bypass.d.mts",
+      "default": "./dist/astro/middleware/i18n-bypass.mjs"
+    },
     "./ui": "./src/ui.ts",
     "./ui/comments": "./src/ui-comments.ts",
     "./ui/search": "./src/components/LiveSearch.astro",

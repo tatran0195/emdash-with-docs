@@ -62,6 +62,10 @@ const config = {
 		defaultLocale: "en",
 		locales: ["en", "ja"],
 		fallback: { ja: "en" },
+		routing: {
+			prefixDefaultLocale: true,
+			redirectToDefaultLocale: true,
+		},
 	},
 	fonts: [
 		{

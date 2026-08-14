@@ -1,37 +1,37 @@
 import type { ContentVersion, DocTreeNode } from "emdash";
 
 export interface DocsRoute {
-	/** Version slug being viewed (`current` when unprefixed). */
+	/** Locale code, e.g. `en` or `ja`. */
+	locale: string;
+	/** Version slug being viewed, e.g. `current` or `1.0`. */
 	version: string;
 	/** Nested path inside the tree, e.g. `guides/install`. */
 	path: string;
-	/** Public URL prefix: `/docs` or `/docs/1.0`. */
+	/** Public URL prefix: `/:locale/docs/:version`. */
 	prefix: string;
 	/** True when the URL is showing a non-default version. */
 	isVersionedUrl: boolean;
 }
 
 /**
- * Peel a leading version slug from `/docs/{...path}` the same way the
- * catch-all template does: default version stays unprefixed.
+ * Parse route parameters for `/:locale/docs/:version/{...path}`.
  */
-export function parseDocsRoute(rawPath: string | undefined, versions: ContentVersion[]): DocsRoute {
-	const segments = (rawPath ?? "").split("/").filter(Boolean);
-	const known = new Set(versions.map((version) => version.slug));
+export function parseDocsRoute(
+	rawPath: string | undefined,
+	versions: ContentVersion[],
+	locale = "en",
+	specifiedVersion?: string,
+): DocsRoute {
 	const defaultVersion = versions.find((version) => version.isDefault)?.slug ?? "current";
-
-	let version = defaultVersion;
-	let path = segments.join("/");
-	if (segments.length >= 1 && known.has(segments[0]) && segments[0] !== defaultVersion) {
-		version = segments[0];
-		path = segments.slice(1).join("/");
-	}
-
+	const version = specifiedVersion || defaultVersion;
+	const path = (rawPath ?? "").replace(/^\/+|\/+$/g, "");
 	const isVersionedUrl = version !== defaultVersion;
+
 	return {
+		locale,
 		version,
 		path,
-		prefix: isVersionedUrl ? `/docs/${version}` : "/docs",
+		prefix: `/${locale}/docs/${version}`,
 		isVersionedUrl,
 	};
 }

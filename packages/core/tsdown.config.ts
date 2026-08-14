@@ -81,6 +81,7 @@ export default defineConfig({
 		"src/astro/middleware/media-usage-write-fence.ts",
 		"src/astro/middleware/redirect.ts",
 		"src/astro/middleware/request-context.ts",
+		"src/astro/middleware/i18n-bypass.ts",
 		"src/astro/types.ts",
 		// Database adapters (config-time + runtime via virtual:emdash/dialect)
 		"src/db/index.ts",

@@ -42,7 +42,7 @@
 					"type": "text"
 				}
 			],
-			"urlPattern": "/posts/{slug}"
+			"urlPattern": "/{locale}/posts/{version}/{slug}"
 		},
 		{
 			"slug": "pages",
@@ -64,13 +64,13 @@
 					"searchable": true
 				}
 			],
-			"urlPattern": "/pages/{slug}"
+			"urlPattern": "/{locale}/pages/{version}/{slug}"
 		},
 		{
 			"slug": "docs",
 			"label": "Docs",
 			"labelSingular": "Doc",
-			"urlPattern": "/docs/{path}",
+			"urlPattern": "/{locale}/docs/{version}/{path}",
 			"supports": ["drafts", "revisions", "search", "seo", "hierarchical", "versioned"],
 			"fields": [
 				{

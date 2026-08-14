@@ -4,36 +4,6 @@ Starter templates for building sites with EmDash CMS. Each template includes a s
 
 ## Available Templates
 
-### Blog
-
-A clean, minimal blog with posts, pages, categories, tags, and search.
-
-**Features:**
-
-- Featured post hero on homepage
-- Post grid with reading time estimates
-- Category and tag archives
-- Full-text search
-- RSS feed
-- SEO metadata and JSON-LD
-- Dark/light mode
-
-**Pages:** Homepage, post archive, single post, single page, category archive, tag archive, search results, 404
-
-### Marketing
-
-A landing page template for products and services with modular content blocks.
-
-**Features:**
-
-- Hero, features, testimonials, pricing, and FAQ blocks
-- Contact form with validation
-- Portable Text content editing
-- SEO metadata and JSON-LD
-- Dark/light mode
-
-**Pages:** Homepage, pricing, contact, 404
-
 ### Docs
 
 A documentation site with pages, posts, and a hierarchical docs tree (Docusaurus / Mintlify / Fumadocs style).
@@ -47,22 +17,6 @@ A documentation site with pages, posts, and a hierarchical docs tree (Docusaurus
 - SEO metadata
 
 **Pages:** Homepage, docs catch-all (`/docs/{path}`), 404
-
-### Portfolio
-
-A portfolio for showcasing creative work with project pages and tag filtering.
-
-**Features:**
-
-- Project grid with hover effects
-- Tag-based filtering on work page
-- Individual project pages with galleries
-- Contact page
-- RSS feed for new projects
-- SEO metadata and JSON-LD
-- Dark/light mode
-
-**Pages:** Homepage, work listing, single project, about, contact, 404
 
 ## Using a Template
 

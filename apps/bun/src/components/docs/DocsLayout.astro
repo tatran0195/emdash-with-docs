@@ -16,6 +16,7 @@ interface Props {
 	crumbs: DocCrumb[];
 	neighbors: DocNeighbors;
 	kind?: "doc" | "section";
+	locale?: string;
 }
 
 const {
@@ -27,6 +28,7 @@ const {
 	crumbs,
 	neighbors,
 	kind = "doc",
+	locale = "en",
 } = Astro.props;
 
 const versionMeta = versions.find((version) => version.slug === activeVersion);
@@ -43,7 +45,7 @@ const versionMeta = versions.find((version) => version.slug === activeVersion);
 
 	<aside class="docs-rail">
 		<DocsSearch />
-		<DocsVersionSwitcher versions={versions} active={activeVersion} currentPath={activePath} />
+		<DocsVersionSwitcher versions={versions} active={activeVersion} currentPath={activePath} locale={locale} />
 		<DocsSidebar tree={tree} activePath={activePath} prefix={prefix} versionLabel={versionMeta?.label} />
 	</aside>
 

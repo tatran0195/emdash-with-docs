@@ -42,12 +42,12 @@ export interface PatternTokens {
 }
 
 export function validateUrlPattern(pattern: string): void {
-	const tokens = [...pattern.matchAll(TOKEN_RE)].map((m) => m[1]);
-	const hasIdentity = tokens.includes("slug") || tokens.includes("path") || tokens.includes("id");
+	const tokens = new Set(Array.from(pattern.matchAll(TOKEN_RE), (m) => m[1]));
+	const hasIdentity = tokens.has("slug") || tokens.has("path") || tokens.has("id");
 	if (!hasIdentity) {
 		throw new UrlPatternError("Pattern must include {slug}, {path}, or {id}", "MISSING_IDENTITY");
 	}
-	if (tokens.includes("path")) {
+	if (tokens.has("path")) {
 		if (!pattern.endsWith("{path}")) {
 			throw new UrlPatternError("{path} must be the last token", "PATH_NOT_LAST");
 		}
@@ -59,7 +59,7 @@ export function validateUrlPattern(pattern: string): void {
 			);
 		}
 	}
-	if (tokens.includes("version") && !tokens.includes("path") && !tokens.includes("slug")) {
+	if (tokens.has("version") && !tokens.has("path") && !tokens.has("slug")) {
 		throw new UrlPatternError("{version} requires {path} or {slug}", "VERSION_WITHOUT_IDENTITY");
 	}
 }
@@ -89,6 +89,7 @@ export interface CompiledPattern {
 	pattern: string;
 	regex: RegExp;
 	paramNames: string[];
+	supports?: string[];
 }
 
 /**

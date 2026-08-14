@@ -8,7 +8,7 @@
 import { existsSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, isAbsolute, relative, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 import type { AstroConfig } from "astro";
 import type { Plugin } from "vite";
@@ -66,7 +66,13 @@ import {
 	generateBlockComponentsModule,
 } from "./virtual-modules.js";
 
-const LOCALE_MESSAGES_RE = /[/\\]([a-z]{2}(?:-[A-Z]{2})?)[/\\]messages\.mjs$/;
+const LOCALE_MESSAGES_RE = /[/\\]([a-z0-9-]+)[/\\]messages\.mjs$/;
+
+function resolveRootPath(root: URL | string): string {
+	if (root instanceof URL) return fileURLToPath(root);
+	if (typeof root === "string" && root.startsWith("file:")) return fileURLToPath(root);
+	return typeof root === "string" ? root : fileURLToPath(root);
+}
 
 /**
  * Vite module IDs always use `/`, including Windows drive paths
@@ -101,6 +107,18 @@ function silenceDataUrlDynamicImport(): Plugin {
 		},
 	};
 }
+
+interface BabelCoreModule {
+	transformAsync: (
+		code: string,
+		opts?: {
+			filename?: string;
+			plugins?: unknown[];
+			parserOpts?: { plugins?: string[] };
+		},
+	) => Promise<{ code?: string | null; map?: unknown } | null>;
+}
+
 /**
  * Vite plugin that compiles Lingui macros in admin source files.
  * Only active in dev mode when the admin package is aliased to source for HMR.
@@ -126,12 +144,14 @@ function linguiMacroPlugin(adminSourcePath: string, adminDistPath: string): Plug
 			if (!importer || !vitePathStartsWith(importer, adminSourcePath)) return;
 			const match = id.match(LOCALE_MESSAGES_RE);
 			if (match?.[1]) {
-				return resolve(adminDistPath, "locales", match[1], "messages.mjs");
+				return toVitePath(resolve(adminDistPath, "locales", match[1], "messages.mjs"));
 			}
 		},
 		async transform(code, id) {
 			if (!vitePathStartsWith(id, adminSourcePath) || !code.includes("@lingui")) return;
-			const { transformAsync } = (await import(babelCorePath)) as typeof import("@babel/core");
+			const { transformAsync } = (await import(
+				pathToFileURL(babelCorePath).href
+			)) as BabelCoreModule;
 			const result = await transformAsync(code, {
 				filename: id,
 				plugins: [linguiMacroPath],
@@ -320,7 +340,7 @@ export function createVirtualModulesPlugin(
 			// Generate sandboxed plugins config module
 			if (id === RESOLVED_VIRTUAL_SANDBOXED_PLUGINS_ID) {
 				// Pass project root for proper module resolution
-				const projectRoot = fileURLToPath(astroConfig.root);
+				const projectRoot = resolveRootPath(astroConfig.root);
 				return generateSandboxedPluginsModule(
 					resolvedConfig.sandboxed ?? [],
 					projectRoot,
@@ -349,7 +369,7 @@ export function createVirtualModulesPlugin(
 			}
 			// Generate seed module — embeds user seed or default at build time
 			if (id === RESOLVED_VIRTUAL_SEED_ID) {
-				const projectRoot = fileURLToPath(astroConfig.root);
+				const projectRoot = resolveRootPath(astroConfig.root);
 				return generateSeedModule(projectRoot, viteCommand === "serve");
 			}
 			// Generate wait-until module — re-exports cloudflare:workers'
@@ -415,7 +435,7 @@ export function createViteConfig(
 	const adminDistPath = resolveAdminDist();
 	const cloudflare = isCloudflareAdapter(options.astroConfig);
 	const isDev = command === "dev";
-	const projectRoot = fileURLToPath(options.astroConfig.root);
+	const projectRoot = resolveRootPath(options.astroConfig.root);
 
 	const adminSourcePath = isDev ? resolveAdminSource(projectRoot) : undefined;
 	const useSource = adminSourcePath !== undefined;

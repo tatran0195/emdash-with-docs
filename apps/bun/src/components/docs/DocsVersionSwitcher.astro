@@ -7,13 +7,14 @@ interface Props {
 	active: string;
 	/** Current doc path so switching versions tries to stay on the same page. */
 	currentPath: string;
+	/** Active locale, e.g. `en`. */
+	locale?: string;
 }
 
-const { versions, active, currentPath } = Astro.props;
-const defaultVersion = versions.find((version) => version.isDefault)?.slug ?? "current";
+const { versions, active, currentPath, locale = "en" } = Astro.props;
 
 function hrefFor(version: ContentVersion): string {
-	const prefix = version.slug === defaultVersion ? "/docs" : `/docs/${version.slug}`;
+	const prefix = `/${locale}/docs/${version.slug}`;
 	return docsHref(prefix, currentPath);
 }
 ---

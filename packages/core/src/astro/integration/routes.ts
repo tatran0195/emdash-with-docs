@@ -82,6 +82,10 @@ export function injectCoreRoutes(
 ): void {
 	// Inject admin shell route
 	injectRoute({
+		pattern: "/_emdash/admin",
+		entrypoint: resolveRoute("admin.astro"),
+	});
+	injectRoute({
 		pattern: "/_emdash/admin/[...path]",
 		entrypoint: resolveRoute("admin.astro"),
 	});

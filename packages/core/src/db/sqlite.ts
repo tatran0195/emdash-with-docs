@@ -142,15 +142,21 @@ async function openNodeSqlite(filePath: string): Promise<KyselySqliteDatabase> {
 			const stmt = database.prepare(sql);
 			return wrapSpreadStatement({
 				reader: sqliteStatementIsReader(sql),
-				all: (...params) => stmt.all(...params) as unknown[],
+				all: (...params) => (stmt.all as (...args: unknown[]) => unknown[])(...params),
 				run: (...params) => {
-					const info = stmt.run(...params);
+					const info = (
+						stmt.run as unknown as (...args: unknown[]) => {
+							changes?: number | bigint;
+							lastInsertRowid?: number | bigint;
+						}
+					)(...params);
 					return {
-						changes: (info.changes as number | bigint | undefined) ?? 0,
-						lastInsertRowid: (info.lastInsertRowid as number | bigint | undefined) ?? 0,
+						changes: info.changes ?? 0,
+						lastInsertRowid: info.lastInsertRowid ?? 0,
 					};
 				},
-				iterate: (...params) => stmt.iterate(...params) as IterableIterator<unknown>,
+				iterate: (...params) =>
+					(stmt.iterate as (...args: unknown[]) => IterableIterator<unknown>)(...params),
 			});
 		},
 	};

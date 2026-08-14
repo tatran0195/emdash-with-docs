@@ -16,6 +16,8 @@ import {
 	type TreeRow,
 } from "./tree-types.js";
 
+export type { TreeRow };
+
 export class TreeError extends Error {
 	constructor(
 		message: string,

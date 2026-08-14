@@ -33,7 +33,15 @@ const pageTitle = adminConfig?.siteName ? `${adminConfig.siteName} Admin` : "EmD
 // of the login redirect. The shell is also personalized per request (locale
 // via cookie/Accept-Language). API routes already send `private, no-store`
 // (API_CACHE_HEADERS); this closes the same gap for the admin HTML.
+Astro.response.status = 200;
 Astro.response.headers.set("Cache-Control", "private, no-store");
+
+// When prefixDefaultLocale is enabled in Astro i18n, the i18n finalizer replaces
+// the admin 200 response with a 404 unless responseRouteType is cleared.
+const fetchState = (Astro as unknown as Record<symbol, any>)[Symbol.for("astro.fetchState")];
+if (fetchState) {
+	fetchState.responseRouteType = undefined;
+}
 
 // Favicon precedence: an explicit build-time `admin.favicon` is admin-specific
 // and always wins — in that case the settings read is skipped entirely.

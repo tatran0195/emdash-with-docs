@@ -202,6 +202,7 @@ export function ContentTree({
 	const newSearch = (extra: { nodeKind: "doc" | "section"; parentId?: string }) => ({
 		locale: activeLocale,
 		version: activeVersion,
+		parentId: undefined,
 		...extra,
 	});
 

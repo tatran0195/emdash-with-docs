@@ -591,6 +591,14 @@ export function emdash(config: EmDashConfig = {}): AstroIntegration {
 					order: "pre",
 				});
 
+				// Recover /_emdash/* routes that Astro's i18n handler replaces with
+				// a synthetic 404 when prefixDefaultLocale is true and the path has
+				// no locale prefix. Runs post so it sees the finalized response.
+				addMiddleware({
+					entrypoint: "emdash/middleware/i18n-bypass",
+					order: "post",
+				});
+
 				// Route info is printed with absolute, clickable URLs once the
 				// dev server is listening (see astro:server:setup), since the
 				// port isn't known yet here. Nothing useful to print for build.

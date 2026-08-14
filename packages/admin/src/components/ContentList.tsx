@@ -576,7 +576,12 @@ export function ContentList({
 													<Link
 														to="/content/$collection/new"
 														params={{ collection }}
-														search={{ locale: activeLocale }}
+														search={{
+															locale: activeLocale,
+															parentId: undefined,
+															nodeKind: undefined,
+															version: undefined,
+														}}
 														className="text-kumo-link underline"
 													>
 														{t`Create your first one`}

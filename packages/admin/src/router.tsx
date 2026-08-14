@@ -783,7 +783,14 @@ const contentNewRoute = createRoute({
 	path: "/content/$collection/new",
 	component: ContentNewPage,
 	staticData: { fullBleed: true },
-	validateSearch: (search: Record<string, unknown>) => ({
+	validateSearch: (
+		search: Record<string, unknown>,
+	): {
+		locale?: string;
+		parentId?: string;
+		nodeKind?: "doc" | "section";
+		version?: string;
+	} => ({
 		locale: typeof search.locale === "string" ? search.locale : undefined,
 		parentId: typeof search.parentId === "string" ? search.parentId : undefined,
 		nodeKind:
@@ -808,7 +815,9 @@ function ContentNewPage() {
 	const toastManager = useKumoToastManager();
 	const [selectedBylines, setSelectedBylines] = React.useState<BylineCreditInput[]>([]);
 	const [treeParentId, setTreeParentId] = React.useState<string | null>(parentParam ?? null);
-	const [treeNodeKind, setTreeNodeKind] = React.useState<"doc" | "section">(kindParam ?? "doc");
+	const [treeNodeKind, setTreeNodeKind] = React.useState<"doc" | "section">(
+		kindParam === "section" ? "section" : "doc",
+	);
 
 	const { data: manifest } = useQuery({
 		queryKey: ["manifest"],
