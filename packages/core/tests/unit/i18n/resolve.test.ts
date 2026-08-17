@@ -83,6 +83,30 @@ describe("interpolateUrlPattern", () => {
 			}),
 		).toBe("/blog/hello");
 	});
+
+	it("substitutes {path}, {version}, and strips {locale} for subsequent localization", () => {
+		expect(
+			interpolateUrlPattern({
+				pattern: "/{locale}/docs/{version}/{path}",
+				collection: "docs",
+				slug: "cross-linking",
+				path: "guides/breadcrumbs/cross-linking",
+				id: "abc",
+				version: "1.2",
+			}),
+		).toBe("/docs/1.2/guides/breadcrumbs/cross-linking");
+
+		expect(
+			interpolateUrlPattern({
+				pattern: "/{locale}/docs/{version}/{path}",
+				collection: "docs",
+				slug: "cross-linking",
+				path: "guides/breadcrumbs/cross-linking",
+				id: "abc",
+				version: "current",
+			}),
+		).toBe("/docs/guides/breadcrumbs/cross-linking");
+	});
 });
 
 describe("localizePath", () => {

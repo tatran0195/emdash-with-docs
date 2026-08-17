@@ -176,6 +176,7 @@ export interface AdminManifest {
 	i18n?: {
 		defaultLocale: string;
 		locales: string[];
+		prefixDefaultLocale?: boolean;
 	};
 	/**
 	 * Taxonomy definitions for the admin sidebar.

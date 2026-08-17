@@ -1,0 +1,162 @@
+---
+import { getI18nConfig, isI18nEnabled } from "emdash";
+import { getActivatedLocales, getLocaleLabel, getLocalizedPath } from "../utils/i18n";
+
+interface Props {
+	locale?: string;
+	locales?: string[];
+}
+
+const i18nConfig = getI18nConfig();
+const currentLocale =
+	Astro.props.locale ||
+	Astro.currentLocale ||
+	Astro.params.locale ||
+	i18nConfig?.defaultLocale ||
+	"en";
+
+const locales =
+	Astro.props.locales ||
+	(i18nConfig?.locales && i18nConfig.locales.length > 0
+		? i18nConfig.locales
+		: getActivatedLocales());
+
+const currentPath = Astro.url.pathname;
+const currentSearch = Astro.url.search;
+const showSwitcher = isI18nEnabled() || locales.length > 1;
+---
+
+{
+	showSwitcher && (
+		<div class="locale-switcher">
+			<label class="locale-label" for="locale-select">
+				<svg
+					class="locale-icon"
+					viewBox="0 0 24 24"
+					width="16"
+					height="16"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<circle cx="12" cy="12" r="10" />
+					<line x1="2" y1="12" x2="22" y2="12" />
+					<path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+				</svg>
+				<span class="sr-only">Language</span>
+			</label>
+			<select
+				id="locale-select"
+				class="locale-select"
+				data-locale-switcher
+				aria-label="Language selection"
+			>
+				{locales.map((code) => {
+					const href = getLocalizedPath(currentPath, code, currentLocale, currentSearch, locales);
+					const label = getLocaleLabel(code);
+					return (
+						<option value={href} selected={code === currentLocale}>
+							{label}
+						</option>
+					);
+				})}
+			</select>
+		</div>
+	)
+}
+
+<script>
+	function bindLocaleSwitcher() {
+		document
+			.querySelectorAll<HTMLSelectElement>("[data-locale-switcher]")
+			.forEach((select) => {
+				if (select.dataset.bound === "1") return;
+				select.dataset.bound = "1";
+				select.addEventListener("change", () => {
+					if (select.value) {
+						window.location.assign(select.value);
+					}
+				});
+			});
+	}
+
+	bindLocaleSwitcher();
+	document.addEventListener("astro:page-load", bindLocaleSwitcher);
+</script>
+
+<style>
+	.locale-switcher {
+		display: inline-flex;
+		align-items: center;
+		position: relative;
+		font-family: var(--font-sans);
+	}
+
+	.locale-label {
+		position: absolute;
+		left: var(--spacing-2);
+		display: flex;
+		align-items: center;
+		pointer-events: none;
+		color: var(--color-text-secondary);
+		z-index: 1;
+	}
+
+	.locale-icon {
+		width: 15px;
+		height: 15px;
+		color: var(--color-muted);
+	}
+
+	.locale-select {
+		appearance: none;
+		-webkit-appearance: none;
+		-moz-appearance: none;
+		display: inline-flex;
+		align-items: center;
+		padding: var(--spacing-2) var(--spacing-6) var(--spacing-2) var(--spacing-7);
+		font-family: var(--font-sans);
+		font-size: var(--font-size-sm);
+		font-weight: 500;
+		color: var(--color-text-secondary);
+		background-color: var(--color-bg);
+		background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238b8b8b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+		background-repeat: no-repeat;
+		background-position: right 0.45rem center;
+		background-size: 14px 14px;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius);
+		cursor: pointer;
+		transition:
+			border-color var(--transition-fast),
+			color var(--transition-fast);
+	}
+
+	.locale-select:hover {
+		color: var(--color-text);
+		border-color: var(--color-accent);
+	}
+
+	.locale-select:focus,
+	.locale-select:focus-visible {
+		outline: none;
+		border-color: var(--color-accent);
+		box-shadow: 0 0 0 2px var(--color-accent-ring);
+		color: var(--color-text);
+	}
+
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border-width: 0;
+	}
+</style>

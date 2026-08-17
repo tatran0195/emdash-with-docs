@@ -73,7 +73,7 @@ function formatDate(date: Date | null | undefined) {
 }
 ---
 
-<Base title={siteTitle} description={siteTagline}>
+<Base title={siteTitle} description={siteTagline} locale={locale}>
 	{
 		posts.length === 0 ? (
 			<section class="empty-state">

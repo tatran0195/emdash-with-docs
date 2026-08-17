@@ -33,15 +33,31 @@ export function contentUrl(
 	slug: string,
 	urlPattern?: string,
 	path?: string | null,
+	locale?: string | null,
+	i18n?: { defaultLocale: string; locales: string[]; prefixDefaultLocale?: boolean } | null,
+	version?: string | null,
 ): string {
 	const safe = slug.replace(LEADING_SLASHES, "");
 	const safePath = (path ?? safe).replace(LEADING_SLASHES, "");
 	if (!urlPattern) return `/${collection}/${safe}`;
+
+	let localeSegment = "";
+	if (locale && i18n) {
+		const isDefault = locale === i18n.defaultLocale;
+		localeSegment = isDefault && !i18n.prefixDefaultLocale ? "" : locale;
+	} else if (locale) {
+		localeSegment = locale;
+	}
+
+	const safeVersion = version && version !== "current" ? version : "";
+
 	let url = urlPattern
+		.replace("{collection}", collection)
 		.replace("{slug}", safe)
 		.replace("{path}", safePath)
 		.replace("{id}", "")
-		.replace("{version}", "");
+		.replace("{version}", safeVersion)
+		.replace("{locale}", localeSegment);
 	url = url.replace(/\/{2,}/g, "/");
 	if (url.length > 1 && url.endsWith("/")) url = url.slice(0, -1);
 	return url || "/";

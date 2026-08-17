@@ -38,7 +38,10 @@ if (!doc) {
 	if (fallback && fallback !== route.path) {
 		return Astro.redirect(`${route.prefix}/${fallback}`);
 	}
-	return Astro.redirect("/404");
+	if (tree.length > 0 && tree[0].path) {
+		return Astro.redirect(`${route.prefix}/${tree[0].path}`);
+	}
+	return Astro.redirect(route.prefix);
 }
 
 if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
@@ -58,6 +61,7 @@ const kind = findNodeByPath(tree, route.path)?.kind === "section" ? "section" : 
 	description={seo.description}
 	canonical={seo.canonical}
 	content={{ collection: "docs", id: doc.data.id, slug: doc.data.slug }}
+	locale={route.locale}
 >
 	<DocsLayout
 		tree={tree}

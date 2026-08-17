@@ -101,6 +101,35 @@ describe("preview URLs", () => {
 			expect(url).toMatch(/^\/hello-world\?_preview=/);
 		});
 
+		it("substitutes {locale}, {version}, and {path} placeholders in docs path", async () => {
+			const url = await getPreviewUrl({
+				collection: "docs",
+				id: "01KZX24ZZG8891G24T8H0SJW7E",
+				slug: "cross-linking",
+				path: "guides/breadcrumbs/cross-linking",
+				version: "1.2",
+				secret: testSecret,
+				pathPattern: "/{locale}/docs/{version}/{path}",
+				locale: "en",
+			});
+
+			expect(url).toMatch(/^\/en\/docs\/1.2\/guides\/breadcrumbs\/cross-linking\?_preview=/);
+		});
+
+		it("collapses empty {locale} and {version} segments in docs path", async () => {
+			const url = await getPreviewUrl({
+				collection: "docs",
+				id: "01KZX24ZZG8891G24T8H0SJW7E",
+				slug: "cross-linking",
+				path: "guides/breadcrumbs/cross-linking",
+				secret: testSecret,
+				pathPattern: "/{locale}/docs/{version}/{path}",
+				locale: "",
+			});
+
+			expect(url).toMatch(/^\/docs\/guides\/breadcrumbs\/cross-linking\?_preview=/);
+		});
+
 		it("respects expiresIn option", async () => {
 			const shortUrl = await getPreviewUrl({
 				collection: "posts",

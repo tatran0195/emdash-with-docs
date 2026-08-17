@@ -91,7 +91,7 @@ export interface ContentListProps {
 	hasMoreTrashed?: boolean;
 	trashedCount?: number;
 	/** i18n config — present when multiple locales are configured */
-	i18n?: { defaultLocale: string; locales: string[] };
+	i18n?: { defaultLocale: string; locales: string[]; prefixDefaultLocale?: boolean };
 	/** Currently active locale filter */
 	activeLocale?: string;
 	/** Callback when locale filter changes */
@@ -605,6 +605,7 @@ export function ContentList({
 											onDelete={onDelete}
 											onDuplicate={onDuplicate}
 											showLocale={!!i18n}
+											i18n={i18n}
 											urlPattern={urlPattern}
 											listColumns={listColumns}
 											selectable={bulkEnabled}
@@ -979,6 +980,7 @@ interface ContentListItemProps {
 	onDelete?: (id: string) => void;
 	onDuplicate?: (id: string) => void;
 	showLocale?: boolean;
+	i18n?: { defaultLocale: string; locales: string[]; prefixDefaultLocale?: boolean };
 	urlPattern?: string;
 	listColumns: ContentListColumn[];
 	selectable?: boolean;
@@ -992,6 +994,7 @@ function ContentListItem({
 	onDelete,
 	onDuplicate,
 	showLocale,
+	i18n,
 	urlPattern,
 	listColumns,
 	selectable,
@@ -1046,7 +1049,15 @@ function ContentListItem({
 				<div className="flex items-center justify-end space-x-1">
 					{item.status === "published" && item.slug && (
 						<LinkButton
-							href={contentUrl(collection, item.slug, urlPattern, item.path)}
+							href={contentUrl(
+								collection,
+								item.slug,
+								urlPattern,
+								item.path,
+								item.locale,
+								i18n,
+								item.versionSlug,
+							)}
 							external
 							variant="ghost"
 							shape="square"

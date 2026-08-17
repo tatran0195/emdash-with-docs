@@ -37,6 +37,7 @@ export function resolveLocaleChain(explicit?: string): string[] {
 }
 
 const REPEATED_SLASHES = /\/{2,}/g;
+const LEADING_SLASHES = /^\/+/;
 
 /**
  * Interpolate a collection `url_pattern` with a row's slug and id.
@@ -51,12 +52,20 @@ export function interpolateUrlPattern(options: {
 	collection: string;
 	slug: string;
 	id: string;
+	path?: string | null;
+	version?: string | null;
 }): string {
-	const { pattern, collection, slug, id } = options;
+	const { pattern, collection, slug, id, path: contentPath, version } = options;
 	const basePattern = pattern ?? `/${encodeURIComponent(collection)}/{slug}`;
+	const safePath = (contentPath ?? slug).replace(LEADING_SLASHES, "");
+	const safeVersion = version && version !== "current" ? version : "";
 	let path = basePattern
+		.replace("{collection}", encodeURIComponent(collection))
 		.replace("{slug}", encodeURIComponent(slug))
-		.replace("{id}", encodeURIComponent(id));
+		.replace("{id}", encodeURIComponent(id))
+		.replace("{path}", safePath)
+		.replace("{version}", safeVersion)
+		.replace("{locale}", "");
 	path = path.replace(REPEATED_SLASHES, "/");
 	if (path.length > 1 && path.endsWith("/")) path = path.slice(0, -1);
 	if (!path.startsWith("/")) path = `/${path}`;

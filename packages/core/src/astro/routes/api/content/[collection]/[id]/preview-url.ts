@@ -48,12 +48,18 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
 	const { previewSecret } = await resolveSecretsCached(emdash.db);
 
 	// Verify the content exists. The fetched item also yields the entry's
-	// locale, used below to resolve the `{locale}` placeholder.
+	// metadata, used below to resolve placeholders like `{locale}`, `{slug}`, `{path}`, `{version}`.
 	let entryLocale: string | null = null;
+	let entrySlug: string | null = null;
+	let entryPath: string | null = null;
+	let entryVersion: string | null = null;
 	if (emdash?.handleContentGet) {
 		const result = await emdash.handleContentGet(collection, id);
 		if (!result.success) return unwrapResult(result);
 		entryLocale = result.data?.item?.locale ?? null;
+		entrySlug = result.data?.item?.slug ?? null;
+		entryPath = result.data?.item?.path ?? null;
+		entryVersion = result.data?.item?.versionSlug ?? null;
 	}
 
 	// Parse request body
@@ -61,10 +67,23 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
 	if (isParseError(body)) return body;
 
 	const expiresIn = body.expiresIn || "1h";
+
+	// Look up collection urlPattern if available
+	let collectionUrlPattern: string | undefined;
+	if (emdash?.getManifest) {
+		try {
+			const manifest = await emdash.getManifest();
+			collectionUrlPattern = manifest.collections[collection]?.urlPattern;
+		} catch {
+			// Manifest lookup is best-effort
+		}
+	}
+
 	// Allow a project-wide default `pathPattern` so the admin's "View on site"
 	// link can match the site's actual route shape without each call having
 	// to override the default `/{collection}/{id}`.
-	const defaultPathPattern = import.meta.env.EMDASH_PREVIEW_PATH_PATTERN || "/{collection}/{id}";
+	const defaultPathPattern =
+		import.meta.env.EMDASH_PREVIEW_PATH_PATTERN || collectionUrlPattern || "/{collection}/{id}";
 	const pathPattern = body.pathPattern || defaultPathPattern;
 
 	// Resolve the locale segment substituted for `{locale}`: empty when the
@@ -91,6 +110,9 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
 			expiresIn,
 			pathPattern,
 			locale: localeSegment,
+			slug: entrySlug ?? undefined,
+			path: entryPath ?? undefined,
+			version: entryVersion && entryVersion !== "current" ? entryVersion : undefined,
 		});
 
 		return apiSuccess({ url, expiresAt });
@@ -104,12 +126,13 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
  */
 function parseExpiresIn(duration: string): number {
 	const match = duration.match(DURATION_PATTERN);
-	if (!match) {
+	const rawValue = match?.[1];
+	const unit = match?.[2];
+	if (!rawValue || !unit) {
 		return 3600; // Default 1 hour
 	}
 
-	const value = parseInt(match[1], 10);
-	const unit = match[2];
+	const value = parseInt(rawValue, 10);
 
 	switch (unit) {
 		case "s":

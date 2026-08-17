@@ -14,6 +14,7 @@ import { sql } from "kysely";
 import { interpolateUrlPattern as interpolatePattern } from "../content/url-pattern.js";
 import type { Database } from "../database/types.js";
 import { validateIdentifier } from "../database/validate.js";
+import { getI18nConfig } from "../i18n/config.js";
 import { resolveLocale, resolveLocaleChain } from "../i18n/resolve.js";
 import { getDb } from "../loader.js";
 import { cachedQuery, CacheNamespace } from "../object-cache/index.js";
@@ -287,13 +288,20 @@ async function resolveMenuItem(
 
 function interpolateContentUrl(
 	pattern: string,
-	tokens: { slug: string; id: string; path?: string | null; versionSlug?: string | null },
+	tokens: {
+		slug: string;
+		id: string;
+		path?: string | null;
+		versionSlug?: string | null;
+		locale?: string | null;
+	},
 ): string {
 	return interpolatePattern(pattern, {
 		slug: tokens.slug,
 		id: tokens.id,
 		path: tokens.path || tokens.slug,
 		version: tokens.versionSlug && tokens.versionSlug !== "current" ? tokens.versionSlug : "",
+		locale: tokens.locale ?? "",
 	});
 }
 
@@ -364,11 +372,21 @@ async function resolveContentUrl(
 		if (!row) return null;
 
 		if (pattern) {
+			const i18n = getI18nConfig();
+			let localeSegment = "";
+			if (locale && i18n) {
+				const isDefault = locale === i18n.defaultLocale;
+				localeSegment = isDefault && !i18n.prefixDefaultLocale ? "" : locale;
+			} else if (locale) {
+				localeSegment = locale;
+			}
+
 			return interpolateContentUrl(pattern, {
 				slug: row.slug,
 				id: row.id,
 				path: row.path,
 				versionSlug: row.version_slug,
+				locale: localeSegment,
 			});
 		}
 		return `/${collection}/${row.slug}`;

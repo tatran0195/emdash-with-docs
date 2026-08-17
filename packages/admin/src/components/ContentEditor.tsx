@@ -529,25 +529,45 @@ export function ContentEditor({
 	const [isLoadingPreview, setIsLoadingPreview] = React.useState(false);
 
 	const urlPattern = manifest?.collections[collection]?.urlPattern;
+	const activeI18n = manifest?.i18n ?? i18n;
+	const activeLocale = entryLocale ?? item?.locale;
 
 	const handlePreview = async () => {
 		if (!item?.id) return;
 
 		setIsLoadingPreview(true);
 		try {
-			const result = await getPreviewUrl(collection, item.id);
+			const result = await getPreviewUrl(collection, item.id, {
+				pathPattern: urlPattern,
+			});
 			if (result?.url) {
 				window.open(result.url, "_blank", "noopener,noreferrer");
 			} else {
 				window.open(
-					contentUrl(collection, slug || item.id, urlPattern, item.path),
+					contentUrl(
+						collection,
+						slug || item.id,
+						urlPattern,
+						item.path,
+						activeLocale,
+						activeI18n,
+						item.versionSlug,
+					),
 					"_blank",
 					"noopener,noreferrer",
 				);
 			}
 		} catch {
 			window.open(
-				contentUrl(collection, slug || item?.id || "", urlPattern, item?.path),
+				contentUrl(
+					collection,
+					slug || item?.id || "",
+					urlPattern,
+					item?.path,
+					activeLocale,
+					activeI18n,
+					item?.versionSlug,
+				),
 				"_blank",
 				"noopener,noreferrer",
 			);
@@ -578,7 +598,17 @@ export function ContentEditor({
 	const hasPendingChanges = draftStatus === "published_with_changes";
 	const isLive = draftStatus === "published" || draftStatus === "published_with_changes";
 	const liveViewUrl =
-		isLive && item?.slug ? contentUrl(collection, item.slug, urlPattern, item.path) : null;
+		isLive && item?.slug
+			? contentUrl(
+					collection,
+					item.slug,
+					urlPattern,
+					item.path,
+					activeLocale,
+					activeI18n,
+					item.versionSlug,
+				)
+			: null;
 
 	// Scheduling — keyed off scheduledAt rather than status, since published
 	// posts can now have a pending schedule without changing status.

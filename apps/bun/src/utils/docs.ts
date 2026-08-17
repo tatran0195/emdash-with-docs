@@ -23,8 +23,13 @@ export function parseDocsRoute(
 	specifiedVersion?: string,
 ): DocsRoute {
 	const defaultVersion = versions.find((version) => version.isDefault)?.slug ?? "current";
-	const version = specifiedVersion || defaultVersion;
-	const path = (rawPath ?? "").replace(/^\/+|\/+$/g, "");
+	const isKnownVersion =
+		specifiedVersion !== undefined && versions.some((v) => v.slug === specifiedVersion);
+
+	const version = isKnownVersion ? specifiedVersion : defaultVersion;
+	const rawPrefix = !isKnownVersion && specifiedVersion ? specifiedVersion : "";
+	const combinedPath = [rawPrefix, rawPath ?? ""].filter(Boolean).join("/");
+	const path = combinedPath.replace(/^\/+|\/+$/g, "");
 	const isVersionedUrl = version !== defaultVersion;
 
 	return {

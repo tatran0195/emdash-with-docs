@@ -82,7 +82,7 @@ export interface ContentTreeProps {
 	onReorder?: (parentId: string | null, ids: string[]) => void;
 	/** Move a node (reparent and/or reorder). Prefer this over `onReorder`. */
 	onMove?: (move: TreeMove) => void;
-	i18n?: { defaultLocale: string; locales: string[] };
+	i18n?: { defaultLocale: string; locales: string[]; prefixDefaultLocale?: boolean };
 	activeLocale?: string;
 	onLocaleChange?: (locale: string) => void;
 	urlPattern?: string;
@@ -454,6 +454,7 @@ export function ContentTree({
 							collection={collection}
 							activeLocale={activeLocale}
 							activeVersion={activeVersion}
+							i18n={i18n}
 							urlPattern={urlPattern}
 							onDelete={frozen ? undefined : onDelete}
 							onDuplicate={frozen ? undefined : onDuplicate}
@@ -533,6 +534,7 @@ function DocsTreeList({
 	collection,
 	activeLocale,
 	activeVersion,
+	i18n,
 	urlPattern,
 	onDelete,
 	onDuplicate,
@@ -545,13 +547,14 @@ function DocsTreeList({
 	collection: string;
 	activeLocale?: string;
 	activeVersion?: string;
+	i18n?: { defaultLocale: string; locales: string[]; prefixDefaultLocale?: boolean };
 	urlPattern?: string;
 	onDelete?: (id: string) => void;
 	onDuplicate?: (id: string) => void;
 	onCommitMove?: (move: TreeMove) => void;
 	frozen?: boolean;
 }) {
-	const { t, i18n } = useLingui();
+	const { t, i18n: linguiI18n } = useLingui();
 	const [draggingId, setDraggingId] = React.useState<string | null>(null);
 	const [overId, setOverId] = React.useState<string | null>(null);
 	const [offsetX, setOffsetX] = React.useState(0);
@@ -567,7 +570,7 @@ function DocsTreeList({
 	);
 	const ids = React.useMemo(() => flat.map((row) => row.id), [flat]);
 	const dragging = flat.find((row) => row.id === draggingId) ?? null;
-	const rtl = i18n.locale ? getLocaleDir(i18n.locale) === "rtl" : false;
+	const rtl = linguiI18n.locale ? getLocaleDir(linguiI18n.locale) === "rtl" : false;
 
 	const projection: TreeProjection | null = React.useMemo(() => {
 		if (!draggingId || !overId) return null;
@@ -632,6 +635,7 @@ function DocsTreeList({
 							collection={collection}
 							activeLocale={activeLocale}
 							activeVersion={activeVersion}
+							i18n={i18n}
 							urlPattern={urlPattern}
 							onDelete={onDelete}
 							onDuplicate={onDuplicate}
@@ -672,6 +676,7 @@ function TreeRow({
 	collection,
 	activeLocale,
 	activeVersion,
+	i18n,
 	urlPattern,
 	onDelete,
 	onDuplicate,
@@ -687,6 +692,7 @@ function TreeRow({
 	collection: string;
 	activeLocale?: string;
 	activeVersion?: string;
+	i18n?: { defaultLocale: string; locales: string[]; prefixDefaultLocale?: boolean };
 	urlPattern?: string;
 	onDelete?: (id: string) => void;
 	onDuplicate?: (id: string) => void;
@@ -892,7 +898,15 @@ function TreeRow({
 						<DropdownMenu.Item
 							icon={menuIcon(<ArrowSquareOut className="h-4 w-4" aria-hidden="true" />)}
 							onClick={() => {
-								const href = contentUrl(collection, node.slug, urlPattern, node.path);
+								const href = contentUrl(
+									collection,
+									node.slug,
+									urlPattern,
+									node.path,
+									activeLocale,
+									i18n,
+									activeVersion,
+								);
 								if (href) window.open(href, "_blank", "noopener,noreferrer");
 							}}
 						>

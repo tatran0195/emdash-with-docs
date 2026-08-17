@@ -7,11 +7,14 @@ import { countTreeNodes, docsHref, flattenTree } from "../../../../utils/docs";
 const locale = Astro.params.locale || "en";
 const versionParam = Astro.params.version || "current";
 
-const [{ versions }, { tree }] = await Promise.all([
-	getEmDashVersions("docs"),
-	getEmDashTree("docs", { locale, version: versionParam }),
-]);
+const { versions } = await getEmDashVersions("docs");
+const defaultVersion = versions.find((v) => v.isDefault)?.slug ?? "current";
+const isKnownVersion = versions.some((v) => v.slug === versionParam);
+if (!isKnownVersion && versionParam !== defaultVersion) {
+	return Astro.redirect(`/${locale}/docs/${defaultVersion}/${versionParam}`);
+}
 
+const { tree } = await getEmDashTree("docs", { locale, version: versionParam });
 const prefix = `/${locale}/docs/${versionParam}`;
 const stats = countTreeNodes(tree);
 const roots = tree;
@@ -20,6 +23,7 @@ const roots = tree;
 <Base
 	title="Documentation"
 	description="Hierarchical, versioned docs beside pages and posts — running on Bun + SQLite."
+	locale={locale}
 >
 	<div class="docs-home">
 		<header class="docs-hero">

@@ -619,7 +619,21 @@ export function createViteConfig(
 			// Never pre-bundle the admin package: the unminified dep chunk is
 			// 30MB+ and first hydration hangs on "Loading EmDash...". Dist ESM
 			// (or source, in monorepo HMR) is served directly instead.
-			include: ["@astrojs/react/client.js"],
+			include: [
+				"@astrojs/react/client.js",
+				"emdash > @floating-ui/react",
+				"emdash > @tiptap/core",
+				"emdash > @tiptap/extension-focus",
+				"emdash > @tiptap/extension-image",
+				"emdash > @tiptap/extension-link",
+				"emdash > @tiptap/extension-placeholder",
+				"emdash > @tiptap/extension-text-align",
+				"emdash > @tiptap/extension-typography",
+				"emdash > @tiptap/extension-underline",
+				"emdash > @tiptap/react",
+				"emdash > @tiptap/starter-kit",
+				"emdash > @tiptap/suggestion",
+			],
 			exclude: cloudflare
 				? ["virtual:emdash", "@emdash-cms/admin"]
 				: [...NODE_NATIVE_EXTERNALS, "virtual:emdash", "@emdash-cms/admin"],

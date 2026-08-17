@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { sanitizeRedirectUrl } from "../../src/lib/url";
+import { sanitizeRedirectUrl, contentUrl } from "../../src/lib/url";
 
 describe("sanitizeRedirectUrl", () => {
 	it("allows simple relative paths", () => {
@@ -55,5 +55,76 @@ describe("sanitizeRedirectUrl", () => {
 
 	it("rejects bare domain", () => {
 		expect(sanitizeRedirectUrl("evil.com")).toBe("/_emdash/admin");
+	});
+});
+
+describe("contentUrl", () => {
+	it("substitutes {locale} placeholder when prefixDefaultLocale is true", () => {
+		const i18n = { defaultLocale: "en", locales: ["en", "ja"], prefixDefaultLocale: true };
+		expect(
+			contentUrl(
+				"docs",
+				"cross-linking",
+				"/{locale}/docs/{version}/{path}",
+				"guides/breadcrumbs/cross-linking",
+				"en",
+				i18n,
+			),
+		).toBe("/en/docs/guides/breadcrumbs/cross-linking");
+		expect(
+			contentUrl(
+				"docs",
+				"cross-linking",
+				"/{locale}/docs/{version}/{path}",
+				"guides/breadcrumbs/cross-linking",
+				"ja",
+				i18n,
+			),
+		).toBe("/ja/docs/guides/breadcrumbs/cross-linking");
+	});
+
+	it("collapses {locale} placeholder when default locale and prefixDefaultLocale is false", () => {
+		const i18n = { defaultLocale: "en", locales: ["en", "ja"], prefixDefaultLocale: false };
+		expect(
+			contentUrl(
+				"docs",
+				"cross-linking",
+				"/{locale}/docs/{version}/{path}",
+				"guides/breadcrumbs/cross-linking",
+				"en",
+				i18n,
+			),
+		).toBe("/docs/guides/breadcrumbs/cross-linking");
+		expect(
+			contentUrl(
+				"docs",
+				"cross-linking",
+				"/{locale}/docs/{version}/{path}",
+				"guides/breadcrumbs/cross-linking",
+				"ja",
+				i18n,
+			),
+		).toBe("/ja/docs/guides/breadcrumbs/cross-linking");
+	});
+
+	it("substitutes non-default version into {version}", () => {
+		expect(
+			contentUrl("docs", "install", "/docs/{version}/{path}", "guides/install", null, null, "1.2"),
+		).toBe("/docs/1.2/guides/install");
+		expect(
+			contentUrl(
+				"docs",
+				"install",
+				"/docs/{version}/{path}",
+				"guides/install",
+				null,
+				null,
+				"current",
+			),
+		).toBe("/docs/guides/install");
+	});
+
+	it("falls back to /{collection}/{slug} when urlPattern is omitted", () => {
+		expect(contentUrl("posts", "hello-world")).toBe("/posts/hello-world");
 	});
 });
